@@ -10,12 +10,17 @@ add_library(nxthal_lms2012 STATIC
         src/hal_timer.c
         src/hal_display.c
         src/hal_display_render.c
+        src/hal_sound.c
+        src/hal_sound_melody.c
+        src/hal_sound_tone.c
+        src/hal_sound_pcm.c
         src/hal_general.c
         src/kdev_ui.c
         include/hal_button.private.h
         include/hal_led.private.h
         include/hal_timer.private.h
         include/hal_display.private.h
+        include/hal_sound.private.h
         include/kdev_ui.h
         )
 
