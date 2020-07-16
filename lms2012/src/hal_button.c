@@ -1,4 +1,4 @@
-#include "kdev_ui.h"
+#include "kdevices.h"
 #include "hal_button.h"
 #include "hal_button.private.h"
 
@@ -18,7 +18,7 @@ mod_button_t Mod_Button;
 // functions
 extern bool Hal_Button_RefAdd(void) {
     if (Mod_Button.refCount == 0) {
-        if (!Kdev_UI_RefAdd())
+        if (!Kdev_RefAdd(&DeviceUi))
             return false;
     }
     Mod_Button.refCount++;
@@ -30,7 +30,7 @@ extern bool Hal_Button_RefDel(void) {
         return false;
     Mod_Button.refCount--;
     if (Mod_Button.refCount == 0) {
-        Kdev_UI_RefDel();
+        Kdev_RefDel(&DeviceUi);
     }
     return true;
 }
@@ -41,7 +41,7 @@ extern bool Hal_Button_Read(uint32_t *pPressedMask) {
 
     int result = 0;
 
-    kdev_ui_mmap_t copy = *Kdev_UI.mmap;
+    ui_mmap_t copy = *DeviceUi.mmap;
 
     for (ev3_button_t btn = 0; btn < EV3_NO_BUTTONS; btn++) {
         int shift = map_native_to_hal[btn];
@@ -53,14 +53,4 @@ extern bool Hal_Button_Read(uint32_t *pPressedMask) {
 
     *pPressedMask = result;
     return true;
-}
-
-extern bool Hal_Button_Supports(button_feature_t feature) {
-    switch (feature) {
-    case BRICK_FEATURE_BUTTONS:
-    case BRICK_FEATURE_EXTRA_BUTTONS:
-        return true;
-    default:
-        return false;
-    }
 }

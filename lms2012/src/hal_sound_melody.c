@@ -1,7 +1,7 @@
 #include "hal_sound.private.h"
 #include <stdio.h>
 #include <memory.h>
-#include <hal_sound.h>
+#include "kdevices.h"
 
 
 int Hal_Sound_StartMelody(uint8_t *stream, uint32_t length, uint8_t volume) {
@@ -28,7 +28,7 @@ void Hal_Sound_Tick(void) {
     if (Mod_Sound.state != SOUND_STATE_MELODY)
         return;
 
-    if (Mod_Sound.mmap->fifo_state == FIFO_EMPTY) {
+    if (DeviceSound.mmap->fifo_state == FIFO_EMPTY) {
         if (Mod_Sound.melodyPtr <= (Mod_Sound.melodyLength - 4)) {
             uint16_t freq, ms;
             freq  = (uint16_t) Mod_Sound.melodyBuffer[Mod_Sound.melodyPtr++] << 8;

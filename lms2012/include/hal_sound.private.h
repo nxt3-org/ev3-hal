@@ -29,18 +29,7 @@ typedef struct {
 } sound_req_data;
 
 
-typedef enum __attribute__((packed)) {
-    FIFO_EMPTY      = 0,
-    FIFO_PROCESSING = 1,
-} sound_kstate_t;
-
-typedef struct {
-    sound_kstate_t fifo_state;
-    uint8_t        padding[3];
-} sound_mmap_t;
-
 typedef enum {
-    SOUND_STATE_UNKNOWN = -1,
     SOUND_STATE_STOPPED = 0,
     SOUND_STATE_PCM,
     SOUND_STATE_MELODY,
@@ -49,8 +38,6 @@ typedef enum {
 
 typedef struct {
     int                   refCount;
-    int                   fd;
-    volatile sound_mmap_t *mmap;
     sound_state_t         state;
     uint16_t              melodyPtr;
     uint16_t              melodyLength;
@@ -61,7 +48,6 @@ typedef struct {
 extern mod_sound_t Mod_Sound;
 
 extern bool initPcm(uint16_t samplerate, uint8_t volume);
-extern bool initMelody(uint8_t volume);
 extern void resetState(void);
 
 extern bool writeCommand(void *buffer, uint32_t size, bool busy);

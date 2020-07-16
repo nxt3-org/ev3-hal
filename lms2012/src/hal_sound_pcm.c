@@ -1,14 +1,14 @@
 #include "hal_sound.private.h"
+#include "kdevices.h"
 #include <stdio.h>
 #include <memory.h>
-#include <unistd.h>
 
 int Hal_Sound_StartPcm(uint8_t *samples, uint32_t length, uint16_t samplerate, uint8_t volume) {
     if (Mod_Sound.refCount <= 0)
         return SOUND_RESULT_ERROR;
 
     // start & underrun
-    if (Mod_Sound.mmap->fifo_state == FIFO_EMPTY) {
+    if (DeviceSound.mmap->fifo_state == FIFO_EMPTY) {
         if (!initPcm(samplerate, volume))
             return SOUND_RESULT_ERROR;
     }
@@ -47,13 +47,8 @@ int writePCM(void *samples, size_t size) {
     sound_req_data req = {.cmd = CMD_DATA};
     memcpy(req.samples, samples, size);
 
-    int written = pwrite(Mod_Sound.fd, &req, size + 1, 0);
-    if (written < 0) {
-        perror("EV3 HAL: cannot submit sound data");
-        return SOUND_RESULT_ERROR;
-    } else if (written == 0) {
-        return SOUND_RESULT_BUSY;
-    } else {
-        return SOUND_RESULT_SENT;
-    }
+    int written = Kdev_Write(&DeviceSound, &req, size + 1, 0);
+
+    return written < 0 ? SOUND_RESULT_ERROR :
+           (written == 0 ? SOUND_RESULT_BUSY : SOUND_RESULT_SENT);
 }

@@ -14,14 +14,22 @@ add_library(nxthal_lms2012 STATIC
         src/hal_sound_melody.c
         src/hal_sound_tone.c
         src/hal_sound_pcm.c
+        src/hal_motor.c
+        src/hal_filesystem.c
         src/hal_general.c
-        src/kdev_ui.c
+        src/kdev_core.c
+        src/kdevices.c
+        src/ev3_fs.c
         include/hal_button.private.h
         include/hal_led.private.h
         include/hal_timer.private.h
         include/hal_display.private.h
         include/hal_sound.private.h
-        include/kdev_ui.h
+        include/hal_motor.private.h
+        include/hal_filesystem.private.h
+        include/kdev_core.h
+        include/kdevices.h
+        include/ev3_fs.h
         )
 
 target_include_directories(nxthal_lms2012

@@ -1,5 +1,6 @@
 #include "hal_display.h"
 #include "hal_display.private.h"
+#include "kdevices.h"
 
 #define CENTER2_EV3_X0 39
 #define CENTER2_EV3_Y0 32
@@ -7,9 +8,9 @@
 void writeDirect(const uint8_t *buffer, bool centered) {
     uint8_t *basePtr;
     if (centered)
-        basePtr = &Mod_Display.kernelMemory[CENTER2_EV3_Y0 * EV3_DISPLAY_STRIDE + CENTER2_EV3_X0 / 3];
+        basePtr = &DeviceDisplay.mmap[CENTER2_EV3_Y0 * EV3_DISPLAY_STRIDE + CENTER2_EV3_X0 / 3];
     else
-        basePtr = &Mod_Display.kernelMemory[0];
+        basePtr = &DeviceDisplay.mmap[0];
 
     const uint8_t *nxtPtr   = buffer;
     uint8_t       *blockPtr = basePtr;
@@ -67,7 +68,7 @@ void writeDirect(const uint8_t *buffer, bool centered) {
 #define NXT_CROP_WIDTH 87
 
 void writeCrop(const uint8_t *buffer) {
-    uint8_t *basePtr = &Mod_Display.kernelMemory[0];
+    uint8_t *basePtr = &DeviceDisplay.mmap[0];
 
     const uint8_t *nxtPtr   = &buffer[NXT_CROP_X0];
     uint8_t       *blockPtr = basePtr;
@@ -113,7 +114,7 @@ void writeCrop(const uint8_t *buffer) {
 }
 
 void writeStretch(const uint8_t *buffer) {
-    uint8_t *basePtr = &Mod_Display.kernelMemory[(EV3_DISPLAY_WIDTH - 150) / 6];
+    uint8_t *basePtr = &DeviceDisplay.mmap[(EV3_DISPLAY_WIDTH - 150) / 6];
 
     const uint8_t *nxtPtr   = &buffer[0];
     uint8_t       *blockPtr = basePtr;

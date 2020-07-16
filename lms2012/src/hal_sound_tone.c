@@ -1,5 +1,5 @@
 #include "hal_sound.private.h"
-#include <stdio.h>
+#include "kdevices.h"
 
 bool Hal_Sound_StartTone(uint16_t freqHZ, uint16_t durMS, uint8_t volume) {
     if (Mod_Sound.refCount <= 0)
@@ -16,7 +16,7 @@ bool Hal_Sound_ToneFinished(void) {
         return true;
 
     if (Mod_Sound.state == SOUND_STATE_TONE) {
-        return Mod_Sound.mmap->fifo_state == FIFO_EMPTY;
+        return DeviceSound.mmap->fifo_state == FIFO_EMPTY;
     } else {
         return true;
     }

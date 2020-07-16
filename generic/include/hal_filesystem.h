@@ -1,0 +1,4 @@
+#ifndef HAL_FILESYSTEM
+#define HAL_FILESYSTEM
+
+#endif //HAL_FILESYSTEM

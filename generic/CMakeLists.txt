@@ -12,6 +12,7 @@ add_library(nxthal STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_sound.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_motor.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_display.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_filesystem.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_general.h
 )
 
