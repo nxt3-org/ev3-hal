@@ -46,7 +46,7 @@ void writeDirect(const uint8_t *buffer, bool centered) {
     }
 
     nxtPtr = &buffer[HAL_DISPLAY_WIDTH - 1];
-    uint8_t *pixelPtr = basePtr;
+    uint8_t *pixelPtr = basePtr + HAL_DISPLAY_WIDTH / 3;
 
     for (int block = 0; block < 8; block++) {
         uint8_t pix = nxtPtr[0];
