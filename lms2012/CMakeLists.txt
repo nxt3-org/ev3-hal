@@ -19,7 +19,7 @@ add_library(nxthal_lms2012 STATIC
         src/hal_general.c
         src/kdev_core.c
         src/kdevices.c
-        src/ev3_fs.c
+        src/posix_fs.c
         include/hal_button.private.h
         include/hal_led.private.h
         include/hal_timer.private.h
@@ -29,7 +29,8 @@ add_library(nxthal_lms2012 STATIC
         include/hal_filesystem.private.h
         include/kdev_core.h
         include/kdevices.h
-        include/ev3_fs.h
+        include/posix_fs.h
+        include/posix_fs.private.h
         )
 
 target_include_directories(nxthal_lms2012
