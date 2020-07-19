@@ -22,5 +22,3 @@ target_include_directories(nxthal
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/
 )
-
-add_library(NXT3::Hal ALIAS nxthal)

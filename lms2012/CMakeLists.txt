@@ -45,5 +45,3 @@ set_target_properties(nxthal_lms2012 PROPERTIES
         C_STANDARD_REQUIRED YES
         C_EXTENSIONS YES
         )
-
-add_library(NXT3::Hal::Lms2012 ALIAS nxthal_lms2012)
