@@ -14,7 +14,7 @@ typedef struct hal_iic_dev hal_iic_dev_t;
 typedef struct hal_iic_ops hal_iic_ops_t;
 
 struct hal_iic_dev {
-    hal_iic_ops_t *ops;
+    const hal_iic_ops_t *ops;
 
     int     port;
     uint8_t last_addr;

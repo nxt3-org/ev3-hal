@@ -15,9 +15,13 @@ add_library(nxthal STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_filesystem.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_general.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_iic.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_adc.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_adc_defs.h
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_timer.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_filesystem.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_iic.c)
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_iic.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_adc.c
+        )
 
 target_include_directories(nxthal
     PUBLIC

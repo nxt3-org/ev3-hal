@@ -18,11 +18,13 @@ add_library(nxthal_lms2012 STATIC
         src/hal_filesystem.c
         src/hal_general.c
         src/hal_iic.c
+        src/hal_adc.c
         src/kdev_core.c
         src/kdevices.c
         src/posix_fs.c
         src/sen_iic_base.c
         src/sen_dummy_us.c
+        src/sen_dummy_light.c
         include/hal_button.private.h
         include/hal_led.private.h
         include/hal_timer.private.h
@@ -31,12 +33,14 @@ add_library(nxthal_lms2012 STATIC
         include/hal_motor.private.h
         include/hal_filesystem.private.h
         include/hal_iic.private.h
+        include/hal_adc.private.h
         include/kdev_core.h
         include/kdevices.h
         include/posix_fs.h
         include/posix_fs.private.h
         include/sen_iic_base.h
         include/sen_dummy_us.h
+        include/sen_dummy_light.h
         )
 
 target_include_directories(nxthal_lms2012
