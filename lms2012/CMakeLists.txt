@@ -19,6 +19,7 @@ add_library(nxthal_lms2012 STATIC
         src/hal_general.c
         src/hal_iic.c
         src/hal_adc.c
+        src/hal_rs485.c
         src/kdev_core.c
         src/kdevices.c
         src/posix_fs.c
@@ -34,6 +35,7 @@ add_library(nxthal_lms2012 STATIC
         include/hal_filesystem.private.h
         include/hal_iic.private.h
         include/hal_adc.private.h
+        include/hal_rs485.private.h
         include/kdev_core.h
         include/kdevices.h
         include/posix_fs.h
