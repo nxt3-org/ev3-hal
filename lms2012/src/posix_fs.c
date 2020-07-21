@@ -68,10 +68,9 @@ void posixFsExit(void) {
 }
 
 error_t posixFsLoadMeta(handle_data_t *pH) {
-    FILE_META   block  = {0, 0};
-    struct stat stData = {0};
-    struct stat stMeta = {0};
-    int         fd;
+    FILE_META_V2 block  = {0, 0, 0};
+    struct stat  stData = {0};
+    int          fd;
 
     // set failure defaults
     pH->fullLength   = 0;
@@ -99,18 +98,6 @@ error_t posixFsLoadMeta(handle_data_t *pH) {
         goto skip;
     }
 
-    // check file age
-
-    if (fstat(fd, &stMeta) < 0) {
-        reportErrno("EV3 FS: cannot stat meta file");
-        goto skip;
-    }
-
-    if ((stData.st_mtim.tv_sec > stMeta.st_mtim.tv_sec) ||
-        (stData.st_mtim.tv_sec == stMeta.st_mtim.tv_sec && stData.st_mtim.tv_nsec > stMeta.st_mtim.tv_nsec)) {
-        goto skip;
-    }
-
     // read block
 
     int bytes = pread(fd, &block, sizeof(block), 0);
@@ -118,13 +105,15 @@ error_t posixFsLoadMeta(handle_data_t *pH) {
         reportErrno("EV3 FS: cannot read meta block");
         goto skip;
     }
-    if (bytes < 4)
+    if (bytes < sizeof(block))
         goto skip;
-    if (block.Version != FILE_META_VERSION)
+    if (block.Version != FILE_META_VERSION_2)
+        goto skip;
+    if (block.FullSize != pH->fullLength)
         goto skip;
 
     // everything went well, now we're ready
-    pH->writePointer = MIN(block.DataSize, pH->fullLength);
+    pH->writePointer = MIN(block.WrittenSize, pH->fullLength);
 skip:
     if (fd >= 0 && close(fd) < 0)
         reportErrno("EV3 FS: cannot close meta file");
@@ -135,9 +124,10 @@ error_t posixFsSaveMeta(handle_data_t *pH) {
     if (!pH->isReal)
         return ILLEGALFILENAME;
 
-    FILE_META info = {
-        .Version  = FILE_META_VERSION,
-        .DataSize = pH->writePointer
+    FILE_META_V2 info = {
+        .Version  = FILE_META_VERSION_2,
+        .WrittenSize = pH->writePointer,
+        .FullSize = pH->fullLength,
     };
 
     error_t result = SUCCESS;
@@ -207,12 +197,12 @@ extern error_t posixFsReadAll(handle_data_t *pH) {
         return SUCCESS;
     }
 
-    pH->memCopy = malloc(pH->fullLength);
+    pH->memCopy  = malloc(pH->fullLength);
     if (!pH->memCopy)
         return reportErrno("EV3 FS: cannot allocate memory for file copy");
 
     error_t err;
-    size_t read = 0;
+    size_t  read = 0;
     for (;;) {
         ssize_t now = pread(pH->linuxFd, pH->memCopy + read, pH->fullLength - read, read);
 
@@ -442,9 +432,9 @@ error_t posixFsClose(handle_data_t *pH, bool saveMeta) {
     }
 
     error_t result = saveMeta ? posixFsSaveMeta(pH) : SUCCESS;
-    pH->fullLength = 0;
+    pH->fullLength   = 0;
     pH->writePointer = 0;
-    pH->readPointer = 0;
+    pH->readPointer  = 0;
     return result;
 }
 

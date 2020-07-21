@@ -11,11 +11,11 @@
 
 typedef struct {
     uint32_t Version;
-    uint32_t DataSize;
-} FILE_META;
+    uint32_t WrittenSize;
+    uint32_t FullSize;
+} FILE_META_V2;
 
-#define FILE_META_VERSION_1 0x00000001
-#define FILE_META_VERSION   FILE_META_VERSION_1
+#define FILE_META_VERSION_2 0x00000002
 
 extern error_t mapErrno(int error);
 extern error_t reportErrno(const char *message);
