@@ -39,7 +39,7 @@ void Hal_Usb_ResetState(void) {
 }
 
 bool Hal_Usb_IsPresent(void) {
-    return true;
+    return false;
 }
 
 bool Hal_Usb_IsReady(void) {
