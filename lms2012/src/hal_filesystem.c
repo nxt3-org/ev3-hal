@@ -1,5 +1,9 @@
 #include <memory.h>
 #include <malloc.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <errno.h>
+#include <sys/eventfd.h>
 #include "hal_filesystem.h"
 #include "hal_filesystem.private.h"
 #include "posix_fs.h"
@@ -26,15 +30,26 @@ bool Hal_Fs_RefAdd(void) {
         Mod_Fs.handles[hnd].isReal        = false;
     }
 
-    if (!posixFsGetDefaultDirs(&Mod_Fs.dataDir, &Mod_Fs.metaDir))
+    Mod_Fs.testFd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+    if (Mod_Fs.testFd < 0) {
+        perror("EV3 FS: cannot open eventfd for memory testing");
         return false;
+    }
+
+    if (!posixFsGetDefaultDirs(&Mod_Fs.dataDir, &Mod_Fs.metaDir)) {
+        close(Mod_Fs.testFd);
+        Mod_Fs.testFd = -1;
+        return false;
+    }
 
     bool initOK = posixFsInit();
     if (!initOK) {
+        close(Mod_Fs.testFd);
         free((void *) Mod_Fs.dataDir);
         free((void *) Mod_Fs.metaDir);
         Mod_Fs.dataDir = NULL;
         Mod_Fs.metaDir = NULL;
+        Mod_Fs.testFd = -1;
         return false;
     }
 
@@ -54,6 +69,10 @@ bool Hal_Fs_RefDel(void) {
         free((void *) Mod_Fs.metaDir);
         Mod_Fs.dataDir = NULL;
         Mod_Fs.metaDir = NULL;
+        if (close(Mod_Fs.testFd) < 0) {
+            perror("Cannot close memory testing FD");
+        }
+        Mod_Fs.testFd = -1;
     }
     Mod_Fs.refCount--;
     return true;
@@ -453,4 +472,31 @@ error_t checkConditions_OpenFn(handle_t hnd) {
     if (err != SUCCESS)
         return err;
     return SUCCESS;
+}
+
+bool   Hal_Fs_CheckForbiddenFilename(const char *name) {
+    // prevent
+    // - NULL pointers
+    // - dangling pointers (hopefully)
+    int result = write(Mod_Fs.testFd, name, 8);
+    if (result == -1 && errno == EFAULT)
+        return false;
+
+    // prevent
+    // - filenames too long to otherwise represent
+    // - crashes due to uninitialized buffers
+    if (strnlen(name, FS_NAME_MAX_BYTES) > FS_NAME_MAX_CHARS)
+        return false;
+
+    // prevent simple directory escapes (via parent, root, ...)
+    if (strstr(name, "/") != NULL)
+        return false;
+
+    // be nice to Win32
+    if (strstr(name, "\\") != NULL)
+        return false;
+
+    // note: These are not proper defenses against malicious software.
+    //       Never run any programs that you don't know are safe!
+    return true;
 }

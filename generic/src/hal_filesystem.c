@@ -68,25 +68,3 @@ error_t Hal_Fs_CheckQuery(const char *test, search_query_t *pQuery) {
     else
         return UNDEFINEDERROR;
 }
-
-bool   Hal_Fs_CheckForbiddenFilename(const char *name) {
-    if (name == NULL)
-        return false;
-    // prevent
-    // - filenames too long to otherwise represent
-    // - crashes due to uninitialized buffers
-    if (strnlen(name, FS_NAME_MAX_BYTES) > FS_NAME_MAX_CHARS)
-        return false;
-
-    // prevent simple directory escapes (via parent, root, ...)
-    if (strstr(name, "/") != NULL)
-        return false;
-
-    // be nice to Win32
-    if (strstr(name, "\\") != NULL)
-        return false;
-
-    // note: These are not proper defenses against malicious software.
-    //       Never run any programs that you don't know are safe!
-    return true;
-}

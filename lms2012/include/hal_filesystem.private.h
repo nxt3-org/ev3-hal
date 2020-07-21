@@ -24,6 +24,7 @@ typedef struct {
     char          *metaDir;
     int           dataDirFd;
     int           metaDirFd;
+    int           testFd;
 } mod_fs_t;
 
 extern mod_fs_t Mod_Fs;
