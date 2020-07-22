@@ -21,6 +21,7 @@ add_library(nxthal_lms2012 STATIC
         src/hal_adc.c
         src/hal_rs485.c
         src/hal_usb.c
+        src/hal_bt.c
         src/kdev_core.c
         src/kdevices.c
         src/posix_fs.c
@@ -38,6 +39,7 @@ add_library(nxthal_lms2012 STATIC
         include/hal_adc.private.h
         include/hal_rs485.private.h
         include/hal_usb.private.h
+        include/hal_bt.private.h
         include/kdev_core.h
         include/kdevices.h
         include/posix_fs.h
