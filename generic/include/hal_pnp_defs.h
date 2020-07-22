@@ -25,8 +25,9 @@ typedef enum {
     PNP_DEVICE_SENSOR_NXT_COLOR  = 4,
     PNP_DEVICE_SENSOR_NXT_SONIC  = 5,
     PNP_DEVICE_SENSOR_NXT_TEMP   = 6,
-    PNP_DEVICE_MOTOR_LARGE       = 7, // essential
-    PNP_DEVICE_MOTOR_MEDIUM      = 8, // essential
+    PNP_DEVICE_MOTOR_EV3_LARGE   = 7, // essential
+    PNP_DEVICE_MOTOR_EV3_MEDIUM  = 8, // essential
+    PNP_DEVICE_MOTOR_NXT_LARGE   = 9,
     PNP_DEVICE_SENSOR_EV3_TOUCH  = 16, // essential
     PNP_DEVICE_SENSOR_NXT_ENERGY = 99,
     PNP_DEVICE_SENSOR_EV3_COLOR  = 29, // essential
