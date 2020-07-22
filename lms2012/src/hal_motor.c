@@ -97,8 +97,8 @@ void Hal_Motor_Tick(void) {
 
 void doScanDCM(uint8_t *motorTypes, uint8_t *pUploadMask) {
     for (int motor = 0; motor < 4; motor++) {
-        uint8_t newConn = DeviceAnalog.mmap->OutputConnection[motor];
-        uint8_t newType = DeviceAnalog.mmap->OutputType[motor];
+        uint8_t newConn = DeviceAnalog.mmap->Dcm_InLink[motor];
+        uint8_t newType = DeviceAnalog.mmap->Dcm_InType[motor];
         motor_type_t newCombo = MOTOR_TYPE_NONE;
 
         if (newConn == MOTOR_DCM_CONN_TACHO) {
