@@ -21,6 +21,8 @@ add_library(nxthal STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_rs485_defs.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_usb.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_bt.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_pnp.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_pnp_defs.h
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_timer.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_filesystem.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_iic.c
