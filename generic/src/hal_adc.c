@@ -55,24 +55,14 @@ void Hal_AdcDev_StorePins(hal_adc_dev_t *dev) {
     return dev->ops->store_pins(dev);
 }
 
-void Hal_AdcDev_Tick(hal_adc_dev_t *dev) {
-    if (!dev || !dev->ops->tick)
-        return;
-    return dev->ops->tick(dev);
-}
-
-bool Hal_AdcDev_JustAttached(hal_adc_dev_t *dev, int port) {
+bool Hal_AdcDev_JustAttached(hal_adc_dev_t *dev) {
     if (!dev) return false;
-    if (dev->port != -1) return false;
-    dev->port = port;
     memset(&dev->pins, 0, sizeof(hal_pins_t));
     return true;
 }
 
 bool Hal_AdcDev_JustDetached(hal_adc_dev_t *dev) {
     if (!dev) return false;
-    if (dev->port == -1) return false;
-    dev->port = -1;
     return true;
 }
 

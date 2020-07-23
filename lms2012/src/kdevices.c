@@ -7,6 +7,7 @@ DeviceTacho_t   DeviceTacho   = KDEV_INIT("/dev/lms_motor", DeviceTacho_t);
 DeviceSound_t   DeviceSound   = KDEV_INIT("/dev/lms_sound", DeviceSound_t);
 DeviceDisplay_t DeviceDisplay = KDEV_INIT_RAWMM("/dev/fb0", EV3_DISPLAY_SIZE);
 DeviceUart_t    DeviceUart    = KDEV_INIT("/dev/lms_uart", DeviceUart_t);
+DeviceTTY_t     DeviceTTY     = KDEV_INIT_NOMM("/dev/lms_tst_uart");
 DeviceAnalog_t  DeviceAnalog  = KDEV_INIT("/dev/lms_analog", DeviceAnalog_t);
 DeviceConnMgr_t DeviceConnMgr = KDEV_INIT_NOMM("/dev/lms_dcm");
 DeviceI2C_t     DeviceI2C     = KDEV_INIT("/dev/lms_iic", DeviceI2C_t);

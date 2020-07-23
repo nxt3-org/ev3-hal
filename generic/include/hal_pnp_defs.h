@@ -4,37 +4,48 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef enum __attribute__((packed)) {
+    PNP_STATE_OFF,
+    PNP_STATE_HANDSHAKING,
+    PNP_STATE_SWITCHING,
+    PNP_STATE_RUNNING,
+} port_state_t;
+
 /**
  * Communication protocols
  */
-typedef enum {
+typedef enum __attribute__((packed)) {
+    PNP_LINK_NONE = -1,
     PNP_LINK_MOTOR,
     PNP_LINK_UART,
     PNP_LINK_IIC,
-    PNP_LINK_ANALOG_PIN1,
+    PNP_LINK_ANALOG,
     PNP_LINK_NXTCOLOR,
-} link_type_t;
+    PNP_LINK_COUNT
+} pnp_link_t;
 
 /**
  * Device IDs
  */
-typedef enum {
-    PNP_DEVICE_SENSOR_NXT_TOUCH  = 1,
-    PNP_DEVICE_SENSOR_NXT_LIGHT  = 2,
-    PNP_DEVICE_SENSOR_NXT_SOUND  = 3,
-    PNP_DEVICE_SENSOR_NXT_COLOR  = 4,
-    PNP_DEVICE_SENSOR_NXT_SONIC  = 5,
-    PNP_DEVICE_SENSOR_NXT_TEMP   = 6,
-    PNP_DEVICE_MOTOR_EV3_LARGE   = 7, // essential
-    PNP_DEVICE_MOTOR_EV3_MEDIUM  = 8, // essential
-    PNP_DEVICE_MOTOR_NXT_LARGE   = 9,
-    PNP_DEVICE_SENSOR_EV3_TOUCH  = 16, // essential
-    PNP_DEVICE_SENSOR_NXT_ENERGY = 99,
-    PNP_DEVICE_SENSOR_EV3_COLOR  = 29, // essential
-    PNP_DEVICE_SENSOR_EV3_SONIC  = 30, // essential
-    PNP_DEVICE_SENSOR_EV3_GYRO   = 32, // essential
-    PNP_DEVICE_SENSOR_EV3_IR     = 33, // essential
-} device_type_t;
+typedef enum __attribute__((packed)) {
+    PNP_DEVICE_UNKNOWN = -2,
+    PNP_DEVICE_NONE    = -1,
+    PNP_DEVICE_TTY,
+    PNP_DEVICE_SENSOR_NXT_TOUCH,
+    PNP_DEVICE_SENSOR_NXT_LIGHT,
+    PNP_DEVICE_SENSOR_NXT_SOUND,
+    PNP_DEVICE_SENSOR_NXT_COLOR,
+    PNP_DEVICE_SENSOR_NXT_SONIC,
+    PNP_DEVICE_SENSOR_NXT_TEMP,
+    PNP_DEVICE_MOTOR_LARGE, // essential
+    PNP_DEVICE_MOTOR_MEDIUM, // essential
+    PNP_DEVICE_SENSOR_EV3_TOUCH, // essential
+    PNP_DEVICE_SENSOR_NXT_ENERGY,
+    PNP_DEVICE_SENSOR_EV3_COLOR, // essential
+    PNP_DEVICE_SENSOR_EV3_SONIC, // essential
+    PNP_DEVICE_SENSOR_EV3_GYRO, // essential
+    PNP_DEVICE_SENSOR_EV3_IR, // essential
+} pnp_device_t;
 
 typedef enum {
     PNP_MODE_NXT_TOUCH_PRESS = 0,

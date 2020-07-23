@@ -18,7 +18,6 @@ add_library(nxthal_lms2012 STATIC
         src/hal_filesystem.c
         src/hal_general.c
         src/hal_iic.c
-        src/hal_adc.c
         src/hal_rs485.c
         src/hal_usb.c
         src/hal_bt.c
@@ -28,7 +27,6 @@ add_library(nxthal_lms2012 STATIC
         src/posix_fs.c
         src/sen_iic_base.c
         src/sen_dummy_us.c
-        src/sen_dummy_light.c
         include/hal_button.private.h
         include/hal_led.private.h
         include/hal_timer.private.h
@@ -37,7 +35,6 @@ add_library(nxthal_lms2012 STATIC
         include/hal_motor.private.h
         include/hal_filesystem.private.h
         include/hal_iic.private.h
-        include/hal_adc.private.h
         include/hal_rs485.private.h
         include/hal_usb.private.h
         include/hal_bt.private.h
@@ -48,8 +45,7 @@ add_library(nxthal_lms2012 STATIC
         include/posix_fs.private.h
         include/sen_iic_base.h
         include/sen_dummy_us.h
-        include/sen_dummy_light.h
-        )
+        include/drv_dcm.h include/drv_dcm.private.h src/drv_dcm.c include/drv_port.h src/drv_motor.c include/drv_motor.h include/drv_motor.private.h include/drv_dummy.h src/drv_dummy.c include/drv_analog.h include/drv_analog.private.h src/drv_analog.c include/sen_ev3_touch.h src/sen_ev3_touch.c include/sen_base.h src/sen_base.c include/sen_ev3_touch.private.h)
 
 target_include_directories(nxthal_lms2012
         PRIVATE
