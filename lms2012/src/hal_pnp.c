@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <drv_analog.h>
 #include <sen_ev3_touch.h>
+#include <drv_uart.h>
+#include <sen_ev3_us.h>
 
 mod_pnp_t Mod_Pnp;
 
@@ -23,13 +25,12 @@ static identify_callback_t IdCallback = {
 
 static modeswitch_callback_t ModeCallback = {
     .started = switchStarted,
-    .failed = switchFailed,
     .finished = switchFinished,
 };
 
 static port_driver_ops_t *drivers[PNP_LINK_COUNT] = {
     [PNP_LINK_MOTOR]    = &DriverMotor,
-    [PNP_LINK_UART]     = &DriverDummy,
+    [PNP_LINK_UART]     = &DriverUart,
     [PNP_LINK_IIC]      = &DriverDummy,
     [PNP_LINK_ANALOG]   = &DriverAnalog,
     [PNP_LINK_NXTCOLOR] = &DriverDummy,
@@ -96,11 +97,6 @@ void Hal_Pnp_Tick(void) {
 }
 
 void dcmLinkFound(dcm_port_id_t port, pnp_link_t link, pnp_device_t dev) {
-    printf("new device: %s port %d, link %d, dev %d\n",
-           (port & DCM_TYPE_MASK) == DCM_TYPE_INPUT ? "input" : "output",
-           port & DCM_PORT_MASK,
-           (int) link,
-           (int) dev);
     Mod_Pnp.ports[port].link     = link;
     Mod_Pnp.ports[port].device   = PNP_DEVICE_UNKNOWN;
     Mod_Pnp.ports[port].hwMode   = 0;
@@ -111,9 +107,6 @@ void dcmLinkFound(dcm_port_id_t port, pnp_link_t link, pnp_device_t dev) {
 
 void dcmLinkLost(dcm_port_id_t port) {
     if (Mod_Pnp.ports[port].state != PNP_STATE_OFF) {
-        printf("removed device: %s port %d\n",
-               (port & DCM_TYPE_MASK) == DCM_TYPE_INPUT ? "input" : "output",
-               port & DCM_PORT_MASK);
         stopEmulation(port);
         drivers[Mod_Pnp.ports[port].link]->DeviceStop(port);
         Mod_Pnp.ports[port].link     = PNP_LINK_NONE;
@@ -142,10 +135,6 @@ void switchStarted(dcm_port_id_t port) {
     Mod_Pnp.ports[port].state = PNP_STATE_SWITCHING;
 }
 
-void switchFailed(dcm_port_id_t port) {
-    Mod_Pnp.ports[port].state = PNP_STATE_RUNNING;
-}
-
 void switchFinished(dcm_port_id_t port, uint8_t hwMode) {
     Mod_Pnp.ports[port].state  = PNP_STATE_RUNNING;
     Mod_Pnp.ports[port].hwMode = hwMode;
@@ -158,9 +147,13 @@ void startEmulation(dcm_port_id_t port) {
                                  Mod_Pnp.ports[port].link,
                                  Mod_Pnp.ports[port].device,
                                  Mod_Pnp.ports[port].hwMode);
-    } else if (Mod_Pnp.ports[port].link == PNP_LINK_ANALOG) {
-        sen = Sensor_EV3Touch_Create(port & DCM_PORT_MASK);
+        return;
     }
+    if (Mod_Pnp.ports[port].device == PNP_DEVICE_SENSOR_EV3_TOUCH)
+        sen = Sensor_EV3Touch_Create(port & DCM_PORT_MASK);
+    if (Mod_Pnp.ports[port].device == PNP_DEVICE_SENSOR_EV3_SONIC)
+        sen = Sensor_EV3Sonic_Create(port & DCM_PORT_MASK);
+
     if (sen != NULL) {
         Mod_Pnp.ports[port].sensor = sen;
         Sensor_Attach(sen);

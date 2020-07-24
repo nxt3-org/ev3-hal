@@ -1,8 +1,11 @@
-#ifndef SEN_DUMMY_US
-#define SEN_DUMMY_US
+#ifndef SEN_EV3_US_PRIVATE
+#define SEN_EV3_US_PRIVATE
 
-#include "hal_iic.h"
+#include <stdint.h>
+#include <stdbool.h>
+#include <hal_iic.h>
 #include "sen_iic_base.h"
+#include "sen_base.h"
 
 typedef enum __attribute__((packed)) {
     SONIC_MODE_OFF,
@@ -26,9 +29,9 @@ typedef struct {
     hal_iic_dev_t     link;
     lego_iic_mem_t    layout;
     lego_sonic_data_t data;
-    int               value;
-    bool valueUp;
-} dummy_sonic_t;
+    sensor_dev_t      dev;
+    uint8_t           port;
+} ev3_sonic_t;
 
 #define SONIC_REG_INTERVAL      0x40
 #define SONIC_REG_MODE          0x41
@@ -38,8 +41,12 @@ typedef struct {
 
 #define SONIC_ADDRESS 0x01
 
-extern dummy_sonic_t *createSonic(void);
-extern void deleteSonic(dummy_sonic_t *dev);
+hal_iic_result_t sonic_prewrite(hal_iic_dev_t *self, uint8_t addr, uint8_t start, uint8_t length);
+void sonic_write(hal_iic_dev_t *self, uint8_t addr, uint8_t reg, uint8_t value);
+hal_iic_result_t sonic_preread(hal_iic_dev_t *self, uint8_t addr, uint8_t start, uint8_t length);
+uint8_t sonic_read(hal_iic_dev_t *self, uint8_t addr, uint8_t reg);
+bool sonic_attach(sensor_dev_t *dev);
+void sonic_detach(sensor_dev_t *dev);
+void sonic_destroy(sensor_dev_t *dev);
 
-
-#endif //SEN_DUMMY_US
+#endif //SEN_EV3_US_PRIVATE

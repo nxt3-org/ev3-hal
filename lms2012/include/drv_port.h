@@ -11,7 +11,6 @@ typedef struct {
 
 typedef struct {
     void (*started)(dcm_port_id_t port);
-    void (*failed)(dcm_port_id_t port);
     void (*finished)(dcm_port_id_t port, uint8_t dstMode);
 } modeswitch_callback_t;
 

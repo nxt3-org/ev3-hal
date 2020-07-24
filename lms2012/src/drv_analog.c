@@ -5,6 +5,15 @@
 
 drv_analog_t Drv_Analog;
 
+port_driver_ops_t DriverAnalog = {
+    .Init = Drv_Analog_RefAdd,
+    .Exit = Drv_Analog_RefDel,
+    .Tick = NULL,
+    .SetCallbacks = Drv_Analog_PnpSetCallbacks,
+    .DeviceStart = Drv_Analog_PnpStart,
+    .DeviceStop = Drv_Analog_PnpStop
+};
+
 bool Drv_Analog_RefAdd(void) {
     if (Drv_Analog.refCount > 0) {
         Drv_Analog.refCount++;
@@ -73,15 +82,6 @@ void Drv_Analog_PnpSetCallbacks(identify_callback_t *id, modeswitch_callback_t *
     Drv_Analog.idCalls   = id;
     Drv_Analog.modeCalls = mode;
 }
-
-port_driver_ops_t DriverAnalog = {
-    .Init = Drv_Analog_RefAdd,
-    .Exit = Drv_Analog_RefDel,
-    .Tick = NULL,
-    .SetCallbacks = Drv_Analog_PnpSetCallbacks,
-    .DeviceStart = Drv_Analog_PnpStart,
-    .DeviceStop = Drv_Analog_PnpStop
-};
 
 bool Drv_Analog_AdcValue(uint8_t sPort, uint16_t *pValue) {
     if (sPort >= 4 || !Drv_Analog.ports[sPort].present)

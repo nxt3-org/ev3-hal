@@ -1,22 +1,17 @@
 #include "hal_iic.h"
 #include <memory.h>
 
-bool Hal_IicDev_JustAttached(hal_iic_dev_t *self, int port) {
+bool Hal_IicDev_JustAttached(hal_iic_dev_t *self) {
     if (!self)
         return false;
-    if (self->port != -1)
-        return false;
 
-    self->port      = port;
     self->last_addr = 0x00;
     self->last_reg  = 0x00;
     return true;
 }
 
 void Hal_IicDev_JustDetached(hal_iic_dev_t *self) {
-    if (!self)
-        return;
-    self->port = -1;
+    return;
 }
 
 hal_iic_result_t Hal_IicDev_Start(hal_iic_dev_t *self, const uint8_t *srcBuf, uint32_t srcLen) {

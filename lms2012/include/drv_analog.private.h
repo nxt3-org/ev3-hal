@@ -29,6 +29,9 @@ typedef struct {
 
 extern drv_analog_t Drv_Analog;
 
+extern bool Drv_Analog_RefAdd(void);
+extern bool Drv_Analog_RefDel(void);
+
 extern void Drv_Analog_PnpStart(dcm_port_id_t port, pnp_link_t link, pnp_device_t dev);
 extern void Drv_Analog_PnpStop(dcm_port_id_t port);
 extern void Drv_Analog_PnpSetCallbacks(identify_callback_t *id, modeswitch_callback_t *mode);

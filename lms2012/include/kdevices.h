@@ -97,9 +97,9 @@ typedef struct {
 } typedata_t;
 
 typedef enum __attribute__((packed)) {
-    UART_FLAG_PNP_REQUEST  = 0x01,
-    UART_FLAG_DATA_READY   = 0x08,
-    UART_FLAG_SEND_COMMAND = 0x10,
+    UART_FLAG_PNP_CHANGE = 0x01,
+    UART_FLAG_DATA_READY = 0x08,
+    UART_FLAG_SENDING    = 0x10,
 } uart_flags_t;
 
 #define MAX_DEVICE_MODES 8
