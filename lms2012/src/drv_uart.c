@@ -81,12 +81,24 @@ void Drv_Uart_Tick(void) {
                 break;
             }
             break;
-        case UART_READING_INFO:
+        case UART_READING_INFO: {
             for (int mode = 0; mode < MAX_MODES; mode++) {
                 Drv_Uart_ReadType(sPort, mode);
             }
-            Drv_Uart.ports[sPort].state = UART_WAITING_FOR_READY;
+
+            dcm_dev_t    dev    = Drv_Uart.ports[sPort].types[0].Device;
+            pnp_device_t pnpDev = dcm2pnp_dev(dev);
+            if (pnpDev == PNP_DEVICE_NONE || pnpDev == PNP_DEVICE_UNKNOWN) {
+                Drv_Uart.ports[sPort].state = UART_OFF;
+                Drv_Uart.idCalls->failure(sPort | DCM_TYPE_INPUT);
+            } else if (pnpDev == PNP_DEVICE_TTY) {
+                Drv_Uart.ports[sPort].state = UART_TTY;
+                Drv_Uart.idCalls->success(sPort | DCM_TYPE_INPUT, PNP_LINK_UART, pnpDev, 0);
+            } else {
+                Drv_Uart.ports[sPort].state = UART_WAITING_FOR_READY;
+            }
             break;
+        }
         case UART_WAITING_FOR_READY:
             if (--Drv_Uart.ports[sPort].timer == 0) {
                 Drv_Uart.ports[sPort].state = UART_OFF;
@@ -100,17 +112,10 @@ void Drv_Uart_Tick(void) {
             if (flags & UART_FLAG_DATA_READY) {
                 dcm_dev_t    dev    = Drv_Uart.ports[sPort].types[0].Device;
                 pnp_device_t pnpDev = dcm2pnp_dev(dev);
-                if (pnpDev != PNP_DEVICE_NONE && pnpDev != PNP_DEVICE_UNKNOWN) {
-                    Drv_Uart.devmap.type[sPort] = dev;
-                    Drv_Uart.ports[sPort].state = UART_READY;
-                    Drv_Uart.idCalls->success(sPort | DCM_TYPE_INPUT,
-                                              PNP_LINK_UART,
-                                              pnpDev,
-                                              0);
-                } else {
-                    Drv_Uart.ports[sPort].state = UART_OFF;
-                    Drv_Uart.idCalls->failure(sPort | DCM_TYPE_INPUT);
-                }
+
+                Drv_Uart.devmap.type[sPort] = dev;
+                Drv_Uart.ports[sPort].state = UART_READY;
+                Drv_Uart.idCalls->success(sPort | DCM_TYPE_INPUT, PNP_LINK_UART, pnpDev, 0);
                 break;
             }
             break;
@@ -121,6 +126,8 @@ void Drv_Uart_Tick(void) {
                 Drv_Uart.modeCalls->started(sPort | DCM_TYPE_INPUT);
                 Drv_Uart.modeCalls->finished(sPort | DCM_TYPE_INPUT, 0);
             }
+            break;
+        case UART_TTY:
             break;
         case UART_WRITING:
             if (!(flags & UART_FLAG_SENDING)) {

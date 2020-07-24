@@ -15,6 +15,7 @@ typedef enum __attribute__((packed)) {
     UART_READY,
     UART_WRITING,
     UART_MODESWITCHING,
+    UART_TTY
 } uart_state_t;
 
 typedef struct {
