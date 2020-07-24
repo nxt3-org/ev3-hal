@@ -127,6 +127,7 @@ void portHandshakeSuccess(dcm_port_id_t port, pnp_link_t link, pnp_device_t devi
 }
 
 void portHandshakeFailure(dcm_port_id_t port) {
+    drivers[Mod_Pnp.ports[port].link]->DeviceStop(port);
     Mod_Pnp.ports[port].state  = PNP_STATE_OFF;
     Mod_Pnp.ports[port].link   = PNP_LINK_NONE;
     Mod_Pnp.ports[port].device = PNP_DEVICE_NONE;
