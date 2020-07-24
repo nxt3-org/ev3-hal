@@ -34,6 +34,7 @@ void tty_tick(hal_iic_dev_t *dev) {
     this->counter = 0;
 
     printf(".");
+    fflush(stdout);
 }
 
 static hal_iic_ops_t iic_ops = {
