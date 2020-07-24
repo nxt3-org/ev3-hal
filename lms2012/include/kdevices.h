@@ -105,7 +105,7 @@ typedef enum __attribute__((packed)) {
 #define MAX_DEVICE_MODES 8
 #define UART_DATA_BYTES 32
 typedef struct {
-    typedata_t Meta[NO_INPUTS][MAX_DEVICE_MODES];
+    typedata_t Typedata[NO_INPUTS][MAX_DEVICE_MODES];
     uint16_t   Buffer_Age[NO_INPUTS][KERNEL_DATALOG_ENTRIES];
     uint8_t    Buffer_Data[NO_INPUTS][KERNEL_DATALOG_ENTRIES][UART_DATA_BYTES];
     uint16_t   Buffer_LastPtr[NO_INPUTS];

@@ -10,6 +10,7 @@
 #include <sen_ev3_touch.h>
 #include <drv_uart.h>
 #include <sen_ev3_us.h>
+#include <sen_ev3_color.h>
 
 mod_pnp_t Mod_Pnp;
 
@@ -153,6 +154,8 @@ void startEmulation(dcm_port_id_t port) {
         sen = Sensor_EV3Touch_Create(port & DCM_PORT_MASK);
     if (Mod_Pnp.ports[port].device == PNP_DEVICE_SENSOR_EV3_SONIC)
         sen = Sensor_EV3Sonic_Create(port & DCM_PORT_MASK);
+    if (Mod_Pnp.ports[port].device == PNP_DEVICE_SENSOR_EV3_COLOR)
+        sen = Sensor_EV3Color_Create(port & DCM_PORT_MASK);
 
     if (sen != NULL) {
         Mod_Pnp.ports[port].sensor = sen;
