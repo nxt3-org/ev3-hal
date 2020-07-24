@@ -64,6 +64,7 @@ sensor_dev_t *Sensor_EV3Touch_Create(int port) {
         dev->link.ops = &adc_ops;
         dev->dev.ops  = &sensor_ops;
         dev->port     = port;
+        return &dev->dev;
     }
-    return &dev->dev;
+    return NULL;
 }

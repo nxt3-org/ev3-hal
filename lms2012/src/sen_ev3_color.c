@@ -39,8 +39,9 @@ sensor_dev_t *Sensor_EV3Color_Create(int port) {
     if (this) {
         this->dev.ops  = &sensor_ops;
         this->port     = port;
+        return &this->dev;
     }
-    return &this->dev;
+    return NULL;
 }
 
 void color_tick(hal_iic_dev_t *dev) {

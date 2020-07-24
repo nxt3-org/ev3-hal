@@ -48,8 +48,9 @@ sensor_dev_t *Sensor_EV3Sonic_Create(int port) {
         sonic->data.actual_scale_factor  = dummy_sonic_header.factory_scale_factor;
         sonic->data.actual_scale_divisor = dummy_sonic_header.factory_scale_divisor;
         sonic->port                      = port;
+        return &sonic->dev;
     }
-    return &sonic->dev;
+    return NULL;
 }
 
 hal_iic_result_t sonic_prewrite(hal_iic_dev_t *self, uint8_t addr, uint8_t start, uint8_t length) {
