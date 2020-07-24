@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <hal_iic.h>
+#include <hal_adc.h>
 #include "sen_iic_base.h"
 #include "sen_base.h"
 
@@ -26,7 +27,8 @@ typedef struct {
 } lego_sonic_data_t;
 
 typedef struct {
-    hal_iic_dev_t     link;
+    hal_adc_dev_t     adc;
+    hal_iic_dev_t     iic;
     lego_iic_mem_t    layout;
     lego_sonic_data_t data;
     sensor_dev_t      dev;
@@ -45,6 +47,7 @@ hal_iic_result_t sonic_prewrite(hal_iic_dev_t *self, uint8_t addr, uint8_t start
 void sonic_write(hal_iic_dev_t *self, uint8_t addr, uint8_t reg, uint8_t value);
 hal_iic_result_t sonic_preread(hal_iic_dev_t *self, uint8_t addr, uint8_t start, uint8_t length);
 uint8_t sonic_read(hal_iic_dev_t *self, uint8_t addr, uint8_t reg);
+static bool sonic_isvalid(hal_adc_dev_t *self);
 bool sonic_attach(sensor_dev_t *dev);
 void sonic_detach(sensor_dev_t *dev);
 void sonic_destroy(sensor_dev_t *dev);

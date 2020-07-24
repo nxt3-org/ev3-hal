@@ -12,6 +12,8 @@
 #include <sen_ev3_us.h>
 #include <sen_ev3_color.h>
 #include <sen_tty.h>
+#include <hal_pnp.h>
+
 
 mod_pnp_t Mod_Pnp;
 
@@ -96,6 +98,66 @@ void Hal_Pnp_Tick(void) {
         if (drivers[drv]->Tick)
             drivers[drv]->Tick();
     }
+}
+
+bool Hal_Pnp_GetLink(uint8_t port, bool output, pnp_link_t *pLink) {
+    if (port >= 4)
+        return false;
+
+    int dcmPort = port | (output ? DCM_TYPE_OUTPUT : DCM_TYPE_INPUT);
+    *pLink = Mod_Pnp.ports[dcmPort].link;
+    return true;
+}
+
+bool Hal_Pnp_GetDevice(uint8_t port, bool output, pnp_device_t *pDevice) {
+    if (port >= 4)
+        return false;
+
+    int dcmPort = port | (output ? DCM_TYPE_OUTPUT : DCM_TYPE_INPUT);
+    *pDevice = Mod_Pnp.ports[dcmPort].device;
+    return true;
+}
+
+bool Hal_Pnp_GetHwMode(uint8_t port, bool output, uint8_t *pMode) {
+    if (port >= 4)
+        return false;
+
+    int dcmPort = port | (output ? DCM_TYPE_OUTPUT : DCM_TYPE_INPUT);
+    if (Mod_Pnp.ports[dcmPort].state == PNP_STATE_OFF ||
+        Mod_Pnp.ports[dcmPort].state == PNP_STATE_HANDSHAKING)
+        return false;
+
+    *pMode = Mod_Pnp.ports[dcmPort].hwMode;
+    return true;
+}
+
+bool Hal_Pnp_GetEmulatedMode(uint8_t port, bool output, uint8_t *pMode) {
+    if (port >= 4)
+        return false;
+
+    int dcmPort = port | (output ? DCM_TYPE_OUTPUT : DCM_TYPE_INPUT);
+    if (Mod_Pnp.ports[dcmPort].state == PNP_STATE_OFF ||
+        Mod_Pnp.ports[dcmPort].state == PNP_STATE_HANDSHAKING)
+        return false;
+
+    *pMode = Mod_Pnp.ports[dcmPort].emulMode;
+    return true;
+}
+
+bool Hal_Pnp_IsReady(uint8_t port, bool output) {
+    if (port >= 4)
+        return false;
+
+    int dcmPort = port | (output ? DCM_TYPE_OUTPUT : DCM_TYPE_INPUT);
+    return Mod_Pnp.ports[dcmPort].state == PNP_STATE_RUNNING;
+}
+
+bool Hal_Pnp_IsSwitching(uint8_t port, bool output) {
+    if (port >= 4)
+        return false;
+
+    int dcmPort = port | (output ? DCM_TYPE_OUTPUT : DCM_TYPE_INPUT);
+    return Mod_Pnp.ports[dcmPort].state == PNP_STATE_SWITCHING;
 }
 
 void dcmLinkFound(dcm_port_id_t port, pnp_link_t link, pnp_device_t dev) {
