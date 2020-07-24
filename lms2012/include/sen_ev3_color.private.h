@@ -7,13 +7,8 @@
 #include <hal_iic.h>
 
 typedef struct {
-    hal_iic_dev_t link;
     sensor_dev_t dev;
-    segread_t datalog;
     uint8_t port;
-    bool launched;
-    bool fired;
-    uint8_t switchCounter;
 } ev3_color_t;
 
 static bool color_attach(sensor_dev_t *dev);

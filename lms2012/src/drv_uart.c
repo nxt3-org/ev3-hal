@@ -313,36 +313,3 @@ bool Drv_Uart_SiValue(uint8_t port, uint8_t slot, float *pValue) {
     *pValue = range * (sMax - sMin) + sMin;
     return true;
 }
-
-bool Drv_Uart_StartCalRead(uint8_t port, segread_t *pRead) {
-    if (port >= 4)
-        return false;
-    pRead->readPtr = DeviceUart.mmap->Buffer_LastPtr[port];
-    pRead->lastAge = DeviceUart.mmap->Buffer_Age[port][pRead->readPtr];
-    return true;
-}
-
-bool Drv_Uart_ContinueCalRead(uint8_t port, segread_t *pRead, uint16_t *row, bool *pReady, bool *pWrite) {
-    if (port >= 4)
-        return false;
-
-    *pReady = (DeviceUart.mmap->Flags[port] & UART_FLAG_DATA_READY) != 0;
-    *pWrite = (DeviceUart.mmap->Flags[port] & UART_FLAG_SENDING) != 0;
-
-restart:
-    if (pRead->lastAge == DeviceUart.mmap->Buffer_Age[port][pRead->readPtr]) {
-        if (pRead->readPtr == DeviceUart.mmap->Buffer_LastPtr[port]) {
-            return false;
-        } else {
-            pRead->readPtr++;
-            if (pRead->readPtr == KERNEL_DATALOG_ENTRIES)
-                pRead->readPtr = 0;
-            pRead->lastAge     = 0;
-            goto restart;
-        }
-    } else {
-        memcpy(row, DeviceUart.mmap->Buffer_Data[port][pRead->readPtr], sizeof(uint16_t) * 3);
-        pRead->lastAge++;
-        return true;
-    }
-}
