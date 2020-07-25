@@ -146,14 +146,11 @@ typedef KDEV_TYPE(motor_mmap_t)  DeviceTacho_t;
 typedef KDEV_TYPE(sound_mmap_t)  DeviceSound_t;
 typedef KDEV_TYPE(uint8_t)       DeviceDisplay_t;
 typedef KDEV_TYPE(uart_mmap_t)   DeviceUart_t;
-typedef KDEV_TYPE(void)          DeviceTTY_t;
 typedef KDEV_TYPE(analog_mmap_t) DeviceAnalog_t;
 typedef KDEV_TYPE(void)          DeviceConnMgr_t;
 typedef KDEV_TYPE(iic_mmap_t)    DeviceI2C_t;
 typedef KDEV_TYPE(usbdev_mmap_t) DeviceUsbDev_t;
 typedef KDEV_TYPE(void)          DeviceBt_t;
-typedef KDEV_TYPE(void)          DeviceUpdate_t;
-typedef KDEV_TYPE(void)          DevicePower_t;
 
 extern DeviceUi_t      DeviceUi;
 extern DevicePwm_t     DevicePwm;
@@ -161,13 +158,10 @@ extern DeviceTacho_t   DeviceTacho;
 extern DeviceSound_t   DeviceSound;
 extern DeviceDisplay_t DeviceDisplay;
 extern DeviceUart_t    DeviceUart;
-extern DeviceTTY_t     DeviceTTY;
 extern DeviceAnalog_t  DeviceAnalog;
 extern DeviceConnMgr_t DeviceConnMgr;
 extern DeviceI2C_t     DeviceI2C;
 extern DeviceUsbDev_t  DeviceUsbDev;
 extern DeviceBt_t      DeviceBt;
-extern DeviceUpdate_t  DeviceUpdate;
-extern DevicePower_t   DevicePower;
 
 #endif //EV3_KDEVICES
