@@ -11,7 +11,7 @@ typedef struct {
 
 bool analog_open(void);
 void analog_close(void);
-void analog_sample_for_400ms(adc_readings_t *data);
+bool analog_sample_for_400ms(adc_readings_t *data);
 void analog_sample_single(adc_readings_t *data);
 
 #endif //ANALOG

@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <math.h>
+#include <autooff.h>
 
 typedef struct {
     uint8_t garbage[28];
@@ -96,7 +97,7 @@ bool elapsed_400ms(struct timespec start) {
     }
 }
 
-void analog_sample_for_400ms(adc_readings_t *data) {
+bool analog_sample_for_400ms(adc_readings_t *data) {
     struct timespec start;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
@@ -104,13 +105,14 @@ void analog_sample_for_400ms(adc_readings_t *data) {
     AdcSumBatteryCurrent = 0;
     AdcSumBatteryVoltage = 0;
 
-    while (!elapsed_400ms(start)) {
+    while (!elapsed_400ms(start) && !autooff_should_exit()) {
         analog_sample();
         struct timespec msec = {.tv_sec=0, .tv_nsec=10 * 1000000};
         while (nanosleep(&msec, &msec));
     }
 
-    return analog_read(data);
+    analog_read(data);
+    return !autooff_should_exit();
 }
 
 void analog_sample_single(adc_readings_t *data) {

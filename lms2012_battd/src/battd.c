@@ -41,7 +41,8 @@ int main(int argc, char **argv) {
     uint16_t lastWarns = state.Events;
 
     while (fifo_should_continue() && !autooff_should_exit()) {
-        analog_sample_for_400ms(&adc);
+        if (!analog_sample_for_400ms(&adc))
+            break;
         detection_update(&state, &adc);
 
         uint16_t warns = state.Events;
