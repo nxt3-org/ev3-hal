@@ -20,7 +20,7 @@ bool Kdev_RefAdd(void *pDeviceG) {
     pDevice->fd   = -1;
     pDevice->mmap = NULL;
 
-    int fd = open(pDevice->path, O_RDWR);
+    int fd = open(pDevice->path, O_RDWR | O_CLOEXEC);
     if (fd < 0) {
         Kdev_LogError("open", pDevice->path);
         return false;
