@@ -57,6 +57,7 @@ bool Hal_Battery_RefAdd(void) {
     Mod_Battery.rxCounter      = Mod_Battery.mem->CounterTx;
     Mod_Battery.mem->CounterRx = Mod_Battery.rxCounter;
     pthread_mutex_unlock(&Mod_Battery.mem->Mutex);
+    clock_gettime(CLOCK_MONOTONIC, &Mod_Battery.lastRx);
 
     if (Mod_Battery.state.BattD_Version != BATTD_VERSION) {
         system("killall battd.elf");
