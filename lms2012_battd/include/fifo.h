@@ -29,7 +29,7 @@ typedef struct {
     battd_msg_t     Message;
 } battd_memory_t;
 
-bool fifo_open();
+bool fifo_open(battd_msg_t *msg);
 void fifo_close(void);
 void fifo_send(battd_msg_t *msg, bool *pResponsive);
 bool fifo_should_continue(void);

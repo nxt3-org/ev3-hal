@@ -3,7 +3,6 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <errno.h>
-#include <sys/stat.h>
 #include <sys/mman.h>
 #include <signal.h>
 
@@ -14,7 +13,7 @@ static uint32_t       sendCounter = 0;
 
 static void softExit(int signo);
 
-bool fifo_open() {
+bool fifo_open(battd_msg_t *msg) {
     int result = unlink("/tmp/battd");
     if (result < 0 && errno != ENOENT) {
         perror("f/unlink1");
@@ -64,12 +63,6 @@ bool fifo_open() {
     pthread_mutex_lock(&pMem->Mutex);
     pMem->CounterRx = 0;
     pMem->CounterTx = 0;
-    pMem->Message.BattD_Version = BATTD_VERSION;
-    pMem->Message.Events = 0;
-    pMem->Message.Battery_Voltage = 0.0f;
-    pMem->Message.Battery_Percent = 0.0f;
-    pMem->Message.Battery_Current = 0.0f;
-    pMem->Message.Battery_Temperature = 0.0f;
     pthread_mutex_unlock(&pMem->Mutex);
 
     struct sigaction sa;
@@ -82,6 +75,9 @@ bool fifo_open() {
 
     sendCounter = 0;
     quit        = false;
+
+    bool tmp = false;
+    fifo_send(msg, &tmp);
 
     if (link("/tmp/battd.tmp", "/tmp/battd") < 0) {
         perror("f/link");

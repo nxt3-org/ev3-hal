@@ -6,16 +6,14 @@
 
 int main(int argc, char **argv) {
     int  retval = 0;
+    adc_readings_t adc;
+    battd_msg_t    state;
 
     if (argc != 1) {
         fputs("BattD: no args expected\n", stderr);
         return 1;
     }
 
-    if (!fifo_open()) {
-        retval = 2;
-        goto cleanup;
-    }
     if (!autooff_open()) {
         retval = 2;
         goto cleanup;
@@ -29,13 +27,17 @@ int main(int argc, char **argv) {
         goto cleanup;
     }
 
-    bool responsive;
-
-    adc_readings_t adc;
-    battd_msg_t    state;
-
     state.BattD_Version = BATTD_VERSION;
     state.Events        = power_is_rechargeable() ? IS_RECHARGEABLE : 0;
+    analog_sample_single(&adc);
+    detection_update(&state, &adc);
+
+    if (!fifo_open(&state)) {
+        retval = 2;
+        goto cleanup;
+    }
+
+    bool responsive;
     uint16_t lastWarns = state.Events;
 
     while (fifo_should_continue() && !autooff_should_exit()) {

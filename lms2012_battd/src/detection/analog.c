@@ -112,3 +112,11 @@ void analog_sample_for_400ms(adc_readings_t *data) {
 
     return analog_read(data);
 }
+
+void analog_sample_single(adc_readings_t *data) {
+    AdcSumSamples        = 0;
+    AdcSumBatteryCurrent = 0;
+    AdcSumBatteryVoltage = 0;
+    analog_sample();
+    return analog_read(data);
+}
