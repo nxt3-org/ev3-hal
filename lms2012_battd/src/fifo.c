@@ -34,6 +34,10 @@ bool fifo_open(battd_msg_t *msg) {
         perror("f/trunc");
         return false;
     }
+    if (fsync(fdOut) < 0) {
+        perror("f/sync");
+        return false;
+    }
     pMem = mmap(NULL, sizeof(battd_memory_t),
                 PROT_READ | PROT_WRITE, MAP_SHARED | MAP_LOCKED,
                 fdOut, 0);
@@ -111,6 +115,7 @@ void fifo_send(battd_msg_t *msg, bool *pResponsive) {
     pMem->CounterTx = sendCounter++;
     pMem->Message = *msg;
     pthread_mutex_unlock(&pMem->Mutex);
+    msync(pMem, sizeof(battd_memory_t), MS_ASYNC);
 }
 
 bool fifo_should_continue(void) {
