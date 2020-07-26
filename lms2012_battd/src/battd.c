@@ -2,6 +2,7 @@
 #include <detection/detection.h>
 #include <action/action.h>
 #include <action/power.h>
+#include <autooff.h>
 
 int main(int argc, char **argv) {
     int  retval = 0;
@@ -12,6 +13,10 @@ int main(int argc, char **argv) {
     }
 
     if (!fifo_open()) {
+        retval = 2;
+        goto cleanup;
+    }
+    if (!autooff_open()) {
         retval = 2;
         goto cleanup;
     }
@@ -33,7 +38,7 @@ int main(int argc, char **argv) {
     state.Events        = power_is_rechargeable() ? IS_RECHARGEABLE : 0;
     uint16_t lastWarns = state.Events;
 
-    while (fifo_should_continue()) {
+    while (fifo_should_continue() && !autooff_should_exit()) {
         analog_sample_for_400ms(&adc);
         detection_update(&state, &adc);
 
@@ -56,6 +61,7 @@ int main(int argc, char **argv) {
 cleanup:
     detection_close();
     action_close();
+    autooff_close();
     fifo_close();
     return retval;
 }

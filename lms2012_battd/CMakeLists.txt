@@ -7,6 +7,7 @@ project(NXT3-HAL-LMS2012-BattD DESCRIPTION "Battery monitoring daemon"
 add_executable(battd.elf
         src/battd.c
         src/fifo.c
+        src/autooff.c
         src/action/action.c
         src/action/power.c
         src/action/pwm.c
@@ -19,6 +20,7 @@ add_executable(battd.elf
         screens/overtemp.xbm
         screens/undervoltage.xbm
         include/fifo.h
+        include/autooff.h
         include/action/action.h
         include/action/power.h
         include/action/pwm.h
