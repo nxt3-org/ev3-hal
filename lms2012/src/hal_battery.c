@@ -21,7 +21,7 @@ bool Hal_Battery_RefAdd(void) {
         return true;
     }
 
-    bool battd_running = system("pidof battd.elf") == 0;
+    bool battd_running = access("/tmp/battd", R_OK) == 0;
     if (!battd_running && !spawn_battd())
         return false;
 
