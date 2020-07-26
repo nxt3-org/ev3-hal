@@ -61,6 +61,17 @@ bool fifo_open() {
         return false;
     }
 
+    pthread_mutex_lock(&pMem->Mutex);
+    pMem->CounterRx = 0;
+    pMem->CounterTx = 0;
+    pMem->Message.BattD_Version = BATTD_VERSION;
+    pMem->Message.Events = 0;
+    pMem->Message.Battery_Voltage = 0.0f;
+    pMem->Message.Battery_Percent = 0.0f;
+    pMem->Message.Battery_Current = 0.0f;
+    pMem->Message.Battery_Temperature = 0.0f;
+    pthread_mutex_unlock(&pMem->Mutex);
+
     struct sigaction sa;
     sa.sa_handler = softExit;
     sigemptyset(&sa.sa_mask);
