@@ -23,10 +23,10 @@ typedef struct {
 } battd_msg_t;
 
 typedef struct {
-    battd_msg_t Message;
-    uint32_t CounterTx;
-    uint32_t CounterRx;
     pthread_mutex_t Mutex;
+    uint32_t        CounterTx;
+    uint32_t        CounterRx;
+    battd_msg_t     Message;
 } battd_memory_t;
 
 bool fifo_open();
