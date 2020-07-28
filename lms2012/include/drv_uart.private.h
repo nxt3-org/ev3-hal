@@ -19,8 +19,8 @@ typedef enum __attribute__((packed)) {
 } uart_state_t;
 
 typedef struct {
-    typedata_t typedata;
-    uint8_t    port;
+    devinfo_t typedata;
+    uint8_t   port;
     uint8_t    mode;
 } uartinfo_t;
 
@@ -33,8 +33,8 @@ typedef struct {
 #define MAX_MODES 8
 #define MAX_HANDSHAKE_TIME 5000
 typedef struct {
-    typedata_t   types[MAX_MODES];
-    uint16_t     timer;
+    devinfo_t types[MAX_MODES];
+    uint16_t  timer;
     uart_state_t state;
 } uart_port_t;
 

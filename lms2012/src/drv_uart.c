@@ -28,7 +28,7 @@ bool Drv_Uart_RefAdd(void) {
     if (!Kdev_RefAdd(&DeviceAnalog))
         return false;
     for (int no = 0; no < 4; no++) {
-        memset(Drv_Uart.ports[no].types, 0, 8 * sizeof(typedata_t));
+        memset(Drv_Uart.ports[no].types, 0, 8 * sizeof(devinfo_t));
         Drv_Uart.ports[no].state = UART_OFF;
         Drv_Uart.devmap.link[no] = DeviceAnalog.mmap->Dcm_InLink[no];
         Drv_Uart.devmap.type[no] = DCM_DEV_UNKNOWN;
@@ -217,7 +217,7 @@ bool Drv_Uart_ReadType(uint8_t sPort, uint8_t mode) {
         return false;
     if (Kdev_Ioctl(&DeviceUart, KERNEL_READ_INFO, &info) < 0)
         return false;
-    memcpy(&Drv_Uart.ports[sPort].types[mode], &info.typedata, sizeof(typedata_t));
+    memcpy(&Drv_Uart.ports[sPort].types[mode], &info.typedata, sizeof(devinfo_t));
     return true;
 }
 
@@ -260,7 +260,7 @@ bool Drv_Uart_DirectValue(uint8_t port, uint8_t slot, float *pValue) {
         return false;
 
     uint8_t       mode = Drv_Uart.devmap.mode[port];
-    uart_format_t fmt  = Drv_Uart.ports[port].types[mode].InterpretAs;
+    data_format_t fmt  = Drv_Uart.ports[port].types[mode].InterpretAs;
 
     uint16_t current = DeviceUart.mmap->Buffer_LastPtr[port];
     uint8_t  *data   = DeviceUart.mmap->Buffer_Data[port][current];

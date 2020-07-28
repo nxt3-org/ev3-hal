@@ -3,6 +3,7 @@
 
 #include "kdev_core.h"
 #include "hal_adc_defs.h"
+#include "device_db.h"
 
 #define NO_BUTTONS 6
 #define NO_OUTPUTS 4
@@ -63,38 +64,7 @@ typedef struct {
     uint16_t   Aux_MsecCounter;
 } analog_mmap_t;
 
-typedef enum __attribute__((packed)) {
-    FORMAT_S8  = 0x0,
-    FORMAT_S16 = 0x1,
-    FORMAT_S32 = 0x2,
-    FORMAT_FLT = 0x3
-} uart_format_t;
 
-#define SENSOR_NAME_CHARS 11
-#define SENSOR_NAME_BYTES 12
-#define UNIT_CHARS 4
-#define UNIT_BYTES 5
-typedef struct {
-    char          Name[SENSOR_NAME_BYTES];
-    uint8_t       Device;
-    uint8_t       Link;
-    uint8_t       Mode;
-    uart_format_t InterpretAs;
-    uint8_t       Digits;
-    uint8_t       DecimalPlaces;
-    uint8_t       GuiVisibleModes;
-    float         RawMin;
-    float         RawMax;
-    float         PercentMin;
-    float         PercentMax;
-    float         SiMin;
-    float         SiMax;
-    uint16_t      ModeswitchMsec;
-    uint16_t      AdcAutoId;
-    char          PinSetupString;
-    char          Unit[UNIT_BYTES];
-    uint16_t      _padding;
-} typedata_t;
 
 typedef enum __attribute__((packed)) {
     UART_FLAG_PNP_CHANGE = 0x01,
@@ -105,8 +75,8 @@ typedef enum __attribute__((packed)) {
 #define MAX_DEVICE_MODES 8
 #define UART_DATA_BYTES 32
 typedef struct {
-    typedata_t Typedata[NO_INPUTS][MAX_DEVICE_MODES];
-    uint16_t   Buffer_Age[NO_INPUTS][KERNEL_DATALOG_ENTRIES];
+    devinfo_t Typedata[NO_INPUTS][MAX_DEVICE_MODES];
+    uint16_t  Buffer_Age[NO_INPUTS][KERNEL_DATALOG_ENTRIES];
     uint8_t    Buffer_Data[NO_INPUTS][KERNEL_DATALOG_ENTRIES][UART_DATA_BYTES];
     uint16_t   Buffer_LastPtr[NO_INPUTS];
     uint16_t   Buffer_WritePtr[NO_INPUTS];
@@ -127,8 +97,8 @@ typedef enum __attribute__((packed)) {
 
 #define IIC_DATA_BYTES 32
 typedef struct {
-    typedata_t Meta[NO_INPUTS][MAX_DEVICE_MODES];
-    uint16_t   Buffer_Age[NO_INPUTS][KERNEL_DATALOG_ENTRIES];
+    devinfo_t Meta[NO_INPUTS][MAX_DEVICE_MODES];
+    uint16_t  Buffer_Age[NO_INPUTS][KERNEL_DATALOG_ENTRIES];
     uint8_t    Buffer_Data[NO_INPUTS][KERNEL_DATALOG_ENTRIES][IIC_DATA_BYTES];
     uint16_t   Buffer_LastPtr[NO_INPUTS];
     uint16_t   Buffer_WritePtr[NO_INPUTS];
