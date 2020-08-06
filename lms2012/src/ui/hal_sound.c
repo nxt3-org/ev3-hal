@@ -28,7 +28,7 @@ bool Hal_Sound_RefDel(void) {
         Kdev_RefDel(&DeviceSound);
     }
     Mod_Sound.refCount--;
-    return false;
+    return true;
 }
 
 bool Hal_Sound_Stop(void) {
