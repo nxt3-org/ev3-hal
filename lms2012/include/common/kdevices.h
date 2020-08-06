@@ -3,7 +3,7 @@
 
 #include "kdev_core.h"
 #include "hal_adc_defs.h"
-#include "io/core/device_db.h"
+#include "io/core/hwdb.h"
 
 #define NO_BUTTONS 6
 #define NO_OUTPUTS 4
@@ -38,7 +38,7 @@ typedef struct {
     CALDATA  Calibration;
     uint16_t Crc16;
     uint16_t Adc_Color[NO_OF_COLORS];
-    uint16_t Unknown[NO_OF_COLORS];
+    uint16_t Calibrated_Color[NO_OF_COLORS];
 } nxtcolor_t;
 
 typedef struct {
@@ -75,8 +75,8 @@ typedef enum __attribute__((packed)) {
 #define MAX_DEVICE_MODES 8
 #define UART_DATA_BYTES 32
 typedef struct {
-    devinfo_t Typedata[NO_INPUTS][MAX_DEVICE_MODES];
-    uint16_t  Buffer_Age[NO_INPUTS][KERNEL_DATALOG_ENTRIES];
+    typedata_t Typedata[NO_INPUTS][MAX_DEVICE_MODES];
+    uint16_t   Buffer_Age[NO_INPUTS][KERNEL_DATALOG_ENTRIES];
     uint8_t    Buffer_Data[NO_INPUTS][KERNEL_DATALOG_ENTRIES][UART_DATA_BYTES];
     uint16_t   Buffer_LastPtr[NO_INPUTS];
     uint16_t   Buffer_WritePtr[NO_INPUTS];
@@ -97,8 +97,8 @@ typedef enum __attribute__((packed)) {
 
 #define IIC_DATA_BYTES 32
 typedef struct {
-    devinfo_t Meta[NO_INPUTS][MAX_DEVICE_MODES];
-    uint16_t  Buffer_Age[NO_INPUTS][KERNEL_DATALOG_ENTRIES];
+    typedata_t Meta[NO_INPUTS][MAX_DEVICE_MODES];
+    uint16_t   Buffer_Age[NO_INPUTS][KERNEL_DATALOG_ENTRIES];
     uint8_t    Buffer_Data[NO_INPUTS][KERNEL_DATALOG_ENTRIES][IIC_DATA_BYTES];
     uint16_t   Buffer_LastPtr[NO_INPUTS];
     uint16_t   Buffer_WritePtr[NO_INPUTS];

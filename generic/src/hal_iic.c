@@ -1,19 +1,6 @@
 #include "hal_iic.h"
 #include <memory.h>
 
-bool Hal_IicDev_JustAttached(hal_iic_dev_t *self) {
-    if (!self)
-        return false;
-
-    self->last_addr = 0x00;
-    self->last_reg  = 0x00;
-    return true;
-}
-
-void Hal_IicDev_JustDetached(hal_iic_dev_t *self) {
-    return;
-}
-
 hal_iic_result_t Hal_IicDev_Start(hal_iic_dev_t *self, const uint8_t *srcBuf, uint32_t srcLen) {
     if (!self)
         return HAL_IIC_RESULT_ERROR;
@@ -31,7 +18,7 @@ hal_iic_result_t Hal_IicDev_Start(hal_iic_dev_t *self, const uint8_t *srcBuf, ui
 
         if (self->ops->write) {
             for (int off = 0; off < srcLen - 2; off++) {
-                self->ops->write(self, self->last_addr, self->last_reg + off, srcBuf[off + 2]);
+                self->ops->write(self, self->last_reg + off, srcBuf[off + 2]);
             }
         }
     }
@@ -50,7 +37,7 @@ hal_iic_result_t Hal_IicDev_Poll(hal_iic_dev_t *self, uint8_t *dstBuf, uint32_t 
 
         if (self->ops->read) {
             for (int off = 0; off < dstLen; off++) {
-                dstBuf[off] = self->ops->read(self, self->last_addr, self->last_reg + off);
+                dstBuf[off] = self->ops->read(self, self->last_reg + off);
             }
         } else {
             memset(dstBuf, 0x00, dstLen);
@@ -65,11 +52,3 @@ void Hal_IicDev_Cancel(hal_iic_dev_t *self) {
     if (self->ops->cancel)
         self->ops->cancel(self, self->last_reg);
 }
-
-void Hal_IicDev_Tick(hal_iic_dev_t *self) {
-    if (!self)
-        return;
-    if (self->ops->tick)
-        self->ops->tick(self);
-}
-

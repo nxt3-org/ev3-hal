@@ -24,11 +24,15 @@ add_library(nxthal STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_pnp.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_pnp_defs.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_battery.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/hal_ev3sensor.h
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_timer.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_filesystem.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_iic.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_adc.c
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_usb.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_motor.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_ev3sensor.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_pnp.c
         )
 
 target_include_directories(nxthal

@@ -13,29 +13,27 @@ add_library(nxthal_lms2012 STATIC
         include/fs/hal_filesystem.private.h
         include/fs/posix_fs.h
         include/fs/posix_fs.private.h
-        include/io/core/device_db.h
+        include/io/core/hwdb.h
+        include/io/core/hwdb.private.h
         include/io/core/hal_pnp.private.h
-        include/io/core/sen_base.h
-        include/io/core/sen_iic_base.h
-        include/io/driver/drv_analog.h
-        include/io/driver/drv_analog.private.h
-        include/io/driver/drv_dcm.h
-        include/io/driver/drv_dcm.private.h
-        include/io/driver/drv_dummy.h
-        include/io/driver/drv_motor.h
-        include/io/driver/drv_motor.private.h
-        include/io/driver/drv_port.h
-        include/io/driver/drv_uart.h
-        include/io/driver/drv_uart.private.h
-        include/io/hal/hal_motor.private.h
-        include/io/hal/sen_ev3_color.h
-        include/io/hal/sen_ev3_color.private.h
-        include/io/hal/sen_ev3_touch.h
-        include/io/hal/sen_ev3_touch.private.h
-        include/io/hal/sen_ev3_us.h
-        include/io/hal/sen_ev3_us.private.h
-        include/io/hal/sen_tty.h
-        include/io/hal/sen_tty.private.h
+        include/io/core/adapter.h
+        include/io/core/hal_pnp.local.h
+        include/io/core/interface.h
+        include/io/core/units.h
+        include/io/driver/if_analog.private.h
+        include/io/driver/dcm.h
+        include/io/driver/dcm.private.h
+        include/io/driver/if_motor.private.h
+        include/io/driver/if_uart.private.h
+        include/io/adapters/iic_base.h
+        include/io/adapters/motor.private.h
+        include/io/adapters/ev3_color.private.h
+        include/io/adapters/touch.private.h
+        include/io/adapters/ev3_us.private.h
+        include/io/adapters/tty.private.h
+        include/io/adapters/nxt_light.private.h
+        include/io/adapters/ev3_gyro.private.h
+        include/io/adapters/ev3_native.private.h
         include/misc/hal_battery.private.h
         include/misc/hal_timer.private.h
         include/ui/hal_button.private.h
@@ -49,20 +47,26 @@ add_library(nxthal_lms2012 STATIC
         src/common/kdevices.c
         src/fs/hal_filesystem.c
         src/fs/posix_fs.c
-        src/io/core/device_db.c
+        src/io/core/hwdb.c
+        src/io/core/hwdb.parser.c
         src/io/core/hal_pnp.c
-        src/io/core/sen_base.c
-        src/io/core/sen_iic_base.c
-        src/io/driver/drv_analog.c
-        src/io/driver/drv_dcm.c
-        src/io/driver/drv_dummy.c
-        src/io/driver/drv_motor.c
-        src/io/driver/drv_uart.c
-        src/io/hal/hal_motor.c
-        src/io/hal/sen_ev3_color.c
-        src/io/hal/sen_ev3_touch.c
-        src/io/hal/sen_ev3_us.c
-        src/io/hal/sen_tty.c
+        src/io/core/adapter.c
+        src/io/core/units.c
+        src/io/adapters/iic_base.c
+        src/io/adapters/motor.c
+        src/io/adapters/ev3_color.c
+        src/io/adapters/touch.c
+        src/io/adapters/ev3_us.c
+        src/io/adapters/tty.c
+        src/io/adapters/nxt_light.c
+        src/io/adapters/ev3_gyro.c
+        src/io/adapters/ev3_native.c
+        src/io/driver/if_analog.c
+        src/io/driver/dcm.c
+        src/io/driver/if_motor.c
+        src/io/driver/if_motor.kernel.c
+        src/io/driver/if_uart.c
+        src/io/driver/if_uart.kernel.c
         src/misc/hal_battery.c
         src/misc/hal_general.c
         src/misc/hal_timer.c

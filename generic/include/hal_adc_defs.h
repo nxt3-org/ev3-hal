@@ -4,58 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/* Constants related to sensor type  */
-typedef enum __attribute__((packed)) {
-    NO_SENSOR          = 0,
-    SWITCH             = 1,
-    TEMPERATURE        = 2,
-    REFLECTION         = 3,
-    ANGLE              = 4,
-    LIGHT_ACTIVE       = 5,
-    LIGHT_INACTIVE     = 6,
-    SOUND_DB           = 7,
-    SOUND_DBA          = 8,
-    CUSTOM             = 9,
-    LOWSPEED           = 10,
-    LOWSPEED_9V        = 11,
-    HIGHSPEED          = 12,
-    COLORFULL          = 13,
-    COLORRED           = 14,
-    COLORGREEN         = 15,
-    COLORBLUE          = 16,
-    COLORNONE          = 17,
-    COLOREXIT          = 18, /* For internal use when going from color or Lamp to no_sensor*/
-    NO_OF_SENSOR_TYPES = 18
-} hal_adc_type_t;
-
-/* Constants related to sensor mode */
-typedef enum __attribute__((packed)) {
-    RAWMODE           = 0x00,
-    BOOLEANMODE       = 0x20,
-    TRANSITIONCNTMODE = 0x40,
-    PERIODCOUNTERMODE = 0x60,
-    PCTFULLSCALEMODE  = 0x80,
-    CELSIUSMODE       = 0xA0,
-    FAHRENHEITMODE    = 0xC0,
-    ANGLESTEPSMODE    = 0xE0,
-    SLOPEMASK         = 0x1F,
-    MODEMASK          = 0xE0
-} hal_adc_mode_t;
-
 #define   NO_OF_INPUTS     4
 #define   pMapInput        ((IOMAPINPUT*)(pHeaders[ENTRY_INPUT]->pIOMap))
-
-/* Constants related to Digital I/O */
-typedef enum {
-    DIGI0 = 1,
-    DIGI1 = 2
-} pin_t;
-
-enum {
-    CUSTOMINACTIVE = 0x00,
-    CUSTOM9V       = 0x01,
-    CUSTOMACTIVE   = 0x02
-};
 
 enum {
     INVALID_DATA = 0x01

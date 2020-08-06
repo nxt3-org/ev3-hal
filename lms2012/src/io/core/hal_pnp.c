@@ -1,43 +1,17 @@
-#include <io/driver/drv_dcm.h>
+#include <stddef.h>
 #include <hal_general.h>
-#include <io/driver/drv_port.h>
-#include <io/driver/drv_motor.h>
-#include <io/hal/hal_motor.private.h>
-#include <io/driver/drv_dummy.h>
-#include "io/core/hal_pnp.private.h"
-#include <stdio.h>
-#include <io/driver/drv_analog.h>
-#include <io/hal/sen_ev3_touch.h>
-#include <io/driver/drv_uart.h>
-#include <io/hal/sen_ev3_us.h>
-#include <io/hal/sen_ev3_color.h>
-#include <io/hal/sen_tty.h>
+#include <io/core/hal_pnp.private.h>
+#include <io/driver/dcm.h>
 #include <hal_pnp.h>
-
 
 mod_pnp_t Mod_Pnp;
 
-static dcm_callback_t DcmCallback = {
-    .linkFound = dcmLinkFound,
-    .linkLost = dcmLinkLost,
-};
-
-static identify_callback_t IdCallback = {
-    .success = portHandshakeSuccess,
-    .failure = portHandshakeFailure,
-};
-
-static modeswitch_callback_t ModeCallback = {
-    .started = switchStarted,
-    .finished = switchFinished,
-};
-
-static port_driver_ops_t *drivers[PNP_LINK_COUNT] = {
+static interface_t *Interfaces[PNP_LINK_COUNT] = {
     [PNP_LINK_MOTOR]    = &DriverMotor,
     [PNP_LINK_UART]     = &DriverUart,
-    [PNP_LINK_IIC]      = &DriverDummy,
+    [PNP_LINK_IIC]      = NULL,
     [PNP_LINK_ANALOG]   = &DriverAnalog,
-    [PNP_LINK_NXTCOLOR] = &DriverDummy,
+    [PNP_LINK_NXTCOLOR] = NULL,
 };
 
 bool Hal_Pnp_RefAdd(void) {
@@ -45,23 +19,32 @@ bool Hal_Pnp_RefAdd(void) {
         Mod_Pnp.refCount++;
         return true;
     }
-    if (!Drv_Dcm_RefAdd())
+    if (!HwDb_RefAdd())
         return false;
-    Drv_Dcm_SetCallback(&DcmCallback);
+    if (!Dcm_RefAdd())
+        return false;
 
     int drv = 0;
     for (; drv < PNP_LINK_COUNT; drv++) {
-        if (!drivers[drv]->Init())
+        if (Interfaces[drv] && !Interfaces[drv]->Init())
             goto cleanup;
-        drivers[drv]->SetCallbacks(&IdCallback, &ModeCallback);
     }
 
     for (int i = 0; i < 8; i++) {
-        Mod_Pnp.ports[i].link     = PNP_LINK_NONE;
-        Mod_Pnp.ports[i].device   = PNP_DEVICE_NONE;
-        Mod_Pnp.ports[i].hwMode   = 0;
-        Mod_Pnp.ports[i].emulMode = 0;
-        Mod_Pnp.ports[i].state    = PNP_STATE_OFF;
+        Mod_Pnp.Ports[i].Interface          = NULL;
+        Mod_Pnp.Ports[i].DetectedLink       = PNP_LINK_NONE;
+        Mod_Pnp.Ports[i].DetectedType       = PNP_DEVICE_NONE;
+        Mod_Pnp.Ports[i].LinkFromDcm        = DCM_LINK_NONE;
+        Mod_Pnp.Ports[i].TypeFromDcm        = DCM_DEV_NONE;
+        Mod_Pnp.Ports[i].Adapter            = NULL;
+        Mod_Pnp.Ports[i].EmulatedPins       = (struct hal_pins) {
+            .pwr_mode = POWER_AUX_OFF,
+            .d0_dir = DIR_IN, .d1_dir = DIR_IN,
+            .d0_in = PIN_LOW, .d1_in = PIN_LOW,
+            .d0_out = PIN_LOW, .d1_out = PIN_LOW,
+        };
+        Mod_Pnp.Ports[i].EmulationTarget    = NO_SENSOR;
+        Mod_Pnp.Ports[i].LastAdapterFactory = NULL;
     }
 
     Mod_Pnp.refCount++;
@@ -70,9 +53,10 @@ bool Hal_Pnp_RefAdd(void) {
 cleanup:
     drv--;
     for (; drv >= 0; drv--) {
-        drivers[drv]->Exit();
+        if (Interfaces[drv])
+            Interfaces[drv]->Exit();
     }
-    Drv_Dcm_RefDel();
+    Dcm_RefDel();
     return false;
 }
 
@@ -81,163 +65,175 @@ bool Hal_Pnp_RefDel(void) {
         return false;
     if (Mod_Pnp.refCount == 1) {
         for (int drv = 0; drv < PNP_LINK_COUNT; drv++) {
-            if (!drivers[drv]->Exit())
+            if (Interfaces[drv] && !Interfaces[drv]->Exit())
                 Hal_General_AbnormalExit("ERROR: cannot deinitialize one of sensor links");
         }
 
-        if (!Drv_Dcm_RefAdd())
+        if (!Dcm_RefDel())
             Hal_General_AbnormalExit("ERROR: cannot deinitialize DCM");
+        if (!HwDb_RefDel())
+            Hal_General_AbnormalExit("ERROR: cannot deinitialize hardware database");
     }
     Mod_Pnp.refCount--;
     return true;
 }
 
 void Hal_Pnp_Tick(void) {
-    Drv_Dcm_Tick();
-    for (int drv = 0; drv < PNP_LINK_COUNT; drv++) {
-        if (drivers[drv]->Tick)
-            drivers[drv]->Tick();
+    Dcm_Tick();
+
+    for (int port = 0; port < 8; port++) {
+        Adapter_Tick(Mod_Pnp.Ports[port].Adapter);
+    }
+    for (int link = 0; link < PNP_LINK_COUNT; link++) {
+        if (Interfaces[link] && Interfaces[link]->Tick)
+            Interfaces[link]->Tick();
     }
 }
 
-bool Hal_Pnp_GetLink(uint8_t port, bool output, pnp_link_t *pLink) {
-    if (port >= 4)
-        return false;
+void Hal_Pnp_LinkFound(int port, bool output, dcm_link_t link, dcm_type_t dev) {
+    int index = port + (output ? 4 : 0);
 
-    int dcmPort = port | (output ? DCM_TYPE_OUTPUT : DCM_TYPE_INPUT);
-    *pLink = Mod_Pnp.ports[dcmPort].link;
-    return true;
-}
+    Mod_Pnp.Ports[index].LinkFromDcm = link;
+    Mod_Pnp.Ports[index].TypeFromDcm = dev;
 
-bool Hal_Pnp_GetDevice(uint8_t port, bool output, pnp_device_t *pDevice) {
-    if (port >= 4)
-        return false;
-
-    int dcmPort = port | (output ? DCM_TYPE_OUTPUT : DCM_TYPE_INPUT);
-    *pDevice = Mod_Pnp.ports[dcmPort].device;
-    return true;
-}
-
-bool Hal_Pnp_GetHwMode(uint8_t port, bool output, uint8_t *pMode) {
-    if (port >= 4)
-        return false;
-
-    int dcmPort = port | (output ? DCM_TYPE_OUTPUT : DCM_TYPE_INPUT);
-    if (Mod_Pnp.ports[dcmPort].state == PNP_STATE_OFF ||
-        Mod_Pnp.ports[dcmPort].state == PNP_STATE_HANDSHAKING)
-        return false;
-
-    *pMode = Mod_Pnp.ports[dcmPort].hwMode;
-    return true;
-}
-
-bool Hal_Pnp_GetEmulatedMode(uint8_t port, bool output, uint8_t *pMode) {
-    if (port >= 4)
-        return false;
-
-    int dcmPort = port | (output ? DCM_TYPE_OUTPUT : DCM_TYPE_INPUT);
-    if (Mod_Pnp.ports[dcmPort].state == PNP_STATE_OFF ||
-        Mod_Pnp.ports[dcmPort].state == PNP_STATE_HANDSHAKING)
-        return false;
-
-    *pMode = Mod_Pnp.ports[dcmPort].emulMode;
-    return true;
-}
-
-bool Hal_Pnp_IsReady(uint8_t port, bool output) {
-    if (port >= 4)
-        return false;
-
-    int dcmPort = port | (output ? DCM_TYPE_OUTPUT : DCM_TYPE_INPUT);
-    return Mod_Pnp.ports[dcmPort].state == PNP_STATE_RUNNING;
-}
-
-bool Hal_Pnp_IsSwitching(uint8_t port, bool output) {
-    if (port >= 4)
-        return false;
-
-    int dcmPort = port | (output ? DCM_TYPE_OUTPUT : DCM_TYPE_INPUT);
-    return Mod_Pnp.ports[dcmPort].state == PNP_STATE_SWITCHING;
-}
-
-void dcmLinkFound(dcm_port_id_t port, pnp_link_t link, pnp_device_t dev) {
-    Mod_Pnp.ports[port].link     = link;
-    Mod_Pnp.ports[port].device   = PNP_DEVICE_UNKNOWN;
-    Mod_Pnp.ports[port].hwMode   = 0;
-    Mod_Pnp.ports[port].emulMode = 0;
-    Mod_Pnp.ports[port].state    = PNP_STATE_HANDSHAKING;
-    drivers[link]->DeviceStart(port, link, dev);
-}
-
-void dcmLinkLost(dcm_port_id_t port) {
-    if (Mod_Pnp.ports[port].state != PNP_STATE_OFF) {
-        stopEmulation(port);
-        drivers[Mod_Pnp.ports[port].link]->DeviceStop(port);
-        Mod_Pnp.ports[port].link     = PNP_LINK_NONE;
-        Mod_Pnp.ports[port].device   = PNP_DEVICE_NONE;
-        Mod_Pnp.ports[port].hwMode   = 0;
-        Mod_Pnp.ports[port].emulMode = 0;
-        Mod_Pnp.ports[port].state    = PNP_STATE_OFF;
-    }
-}
-
-void portHandshakeSuccess(dcm_port_id_t port, pnp_link_t link, pnp_device_t device, uint8_t hwMode) {
-    Mod_Pnp.ports[port].state  = PNP_STATE_RUNNING;
-    Mod_Pnp.ports[port].link   = link;
-    Mod_Pnp.ports[port].device = device;
-    Mod_Pnp.ports[port].hwMode = hwMode;
-    startEmulation(port);
-}
-
-void portHandshakeFailure(dcm_port_id_t port) {
-    drivers[Mod_Pnp.ports[port].link]->DeviceStop(port);
-    Mod_Pnp.ports[port].state  = PNP_STATE_OFF;
-    Mod_Pnp.ports[port].link   = PNP_LINK_NONE;
-    Mod_Pnp.ports[port].device = PNP_DEVICE_NONE;
-}
-
-void switchStarted(dcm_port_id_t port) {
-    Mod_Pnp.ports[port].state = PNP_STATE_SWITCHING;
-}
-
-void switchFinished(dcm_port_id_t port, uint8_t hwMode) {
-    Mod_Pnp.ports[port].state  = PNP_STATE_RUNNING;
-    Mod_Pnp.ports[port].hwMode = hwMode;
-}
-
-void startEmulation(dcm_port_id_t port) {
-    sensor_dev_t *sen = NULL;
-    if (Mod_Pnp.ports[port].link == PNP_LINK_MOTOR) {
-        Hal_Motor_DeviceAttached(port & DCM_PORT_MASK,
-                                 Mod_Pnp.ports[port].link,
-                                 Mod_Pnp.ports[port].device,
-                                 Mod_Pnp.ports[port].hwMode);
+    pnp_link_t pnpLink = IdentifyLink(link);
+    if (pnpLink == PNP_LINK_NONE || pnpLink >= PNP_LINK_COUNT)
         return;
-    }
-    if (Mod_Pnp.ports[port].device == PNP_DEVICE_SENSOR_EV3_TOUCH)
-        sen = Sensor_EV3Touch_Create(port & DCM_PORT_MASK);
-    if (Mod_Pnp.ports[port].device == PNP_DEVICE_SENSOR_EV3_SONIC)
-        sen = Sensor_EV3Sonic_Create(port & DCM_PORT_MASK);
-    if (Mod_Pnp.ports[port].device == PNP_DEVICE_SENSOR_EV3_COLOR)
-        sen = Sensor_EV3Color_Create(port & DCM_PORT_MASK);
-    if (Mod_Pnp.ports[port].device == PNP_DEVICE_TTY)
-        sen = Sensor_TTY_Create(port & DCM_PORT_MASK);
 
-    if (sen != NULL) {
-        Mod_Pnp.ports[port].sensor = sen;
-        Sensor_Attach(sen);
+    interface_t *interface = Interfaces[IdentifyLink(link)];
+    if (!interface)
+        return;
+
+    Mod_Pnp.Ports[index].DetectedLink = pnpLink;
+    Mod_Pnp.Ports[index].DetectedType = PNP_DEVICE_UNKNOWN;
+    Mod_Pnp.Ports[index].Interface    = interface;
+    if (!interface->Start(port, link, dev)) {
+        Hal_Pnp_HandshakeFailed(port, output);
     }
 }
 
-void stopEmulation(dcm_port_id_t port) {
-    if (Mod_Pnp.ports[port].link == PNP_LINK_MOTOR) {
-        Hal_Motor_DeviceDetached(port & DCM_PORT_MASK);
+void Hal_Pnp_LinkLost(int port, bool output) {
+    int index = port + (output ? 4 : 0);
 
-    } else {
-        sensor_dev_t *sen = Mod_Pnp.ports[port].sensor;
-        if (sen) {
-            Sensor_Detach(sen);
-            Sensor_Destroy(sen);
-        }
+    if (Mod_Pnp.Ports[index].Adapter) {
+        Adapter_Detach(Mod_Pnp.Ports[index].Adapter);
+        Adapter_Destroy(Mod_Pnp.Ports[index].Adapter);
     }
+    Mod_Pnp.Ports[index].Interface->Stop(port);
+
+    Mod_Pnp.Ports[index].Adapter            = NULL;
+    Mod_Pnp.Ports[index].LastAdapterFactory = NULL;
+    Mod_Pnp.Ports[index].DetectedType       = PNP_DEVICE_NONE;
+    Mod_Pnp.Ports[index].DetectedLink       = PNP_LINK_NONE;
+    Mod_Pnp.Ports[index].LinkFromDcm        = DCM_LINK_NONE;
+    Mod_Pnp.Ports[index].TypeFromDcm        = DCM_DEV_NONE;
+    Mod_Pnp.Ports[index].Interface          = NULL;
+}
+
+void Hal_Pnp_HandshakeFinished(int portNo, bool output, pnp_type_t type) {
+    int        index = portNo + (output ? 4 : 0);
+    pnp_port_t *port = &Mod_Pnp.Ports[index];
+
+    port->DetectedType = type;
+    Hal_Pnp_SetType(portNo, output, port->EmulationTarget);
+}
+
+void Hal_Pnp_HandshakeFailed(int port, bool output) {
+    Hal_Pnp_LinkLost(port, output);
+}
+
+pnp_link_t Hal_Pnp_GetLink(int port, bool output) {
+    if (port < 0 || port >= 4) return PNP_LINK_NONE;
+    int index = port + (output ? 4 : 0);
+
+    return Mod_Pnp.Ports[index].DetectedLink;
+}
+
+pnp_type_t Hal_Pnp_GetDevice(int port, bool output) {
+    if (port < 0 || port >= 4) return PNP_DEVICE_NONE;
+    int index = port + (output ? 4 : 0);
+
+    return Mod_Pnp.Ports[index].DetectedType;
+}
+
+bool Hal_Pnp_Restart(int inputPort) {
+    if (inputPort < 0 || inputPort >= 4) return false;
+    int index = inputPort + 0;
+
+    if (Mod_Pnp.Ports[index].Interface) {
+        dcm_link_t prevLink = Mod_Pnp.Ports[index].LinkFromDcm;
+        dcm_type_t prevType = Mod_Pnp.Ports[index].TypeFromDcm;
+
+        Hal_Pnp_LinkLost(inputPort, false);
+        Hal_Pnp_LinkFound(inputPort, false, prevLink, prevType);
+        return true;
+    }
+    return false;
+}
+
+extern bool Hal_Pnp_IsReady(int inputPort) {
+    if (inputPort < 0 || inputPort >= 4) return false;
+
+    switch (Adapter_IsReady(Mod_Pnp.Ports[inputPort + 0].Adapter)) {
+    case READY_DEVICE_NOT_PRESENT:
+        return true; // do not tie "ready" down to prevent deadlock
+    case READY_NOT_SIGNALLED:
+        return true; // ready by default
+    case READY_SIGNALLED_YES:
+        return true; // explicit approval
+    case READY_SIGNALLED_NO:
+        return false; // explicit disapproval
+    }
+}
+
+extern void Hal_Pnp_SetType(int port, bool output, hal_nxt_type_t mode) {
+    if (port < 0 || port >= 4) return;
+    int index = port + (output ? 4 : 0);
+
+    Mod_Pnp.Ports[index].EmulationTarget = mode;
+
+    const pnp_type_t type = Mod_Pnp.Ports[index].DetectedType;
+
+    const adapter_factory_t newFactory = HwDb_FindAdapter(type, mode);
+
+    if (newFactory == Mod_Pnp.Ports[index].LastAdapterFactory)
+        return; // skip if noop
+
+    if (newFactory) {
+        adapter_t *oldFront = Mod_Pnp.Ports[index].Adapter;
+        adapter_t *newFront = newFactory(port, Mod_Pnp.Ports[index].Interface);
+        if (!newFront) return;
+
+        Adapter_Detach(oldFront);
+        if (Adapter_Attach(newFront)) {
+            Adapter_SetPins(newFront, Mod_Pnp.Ports[index].EmulatedPins);
+            Mod_Pnp.Ports[index].LastAdapterFactory = newFactory;
+            Mod_Pnp.Ports[index].Adapter            = newFront;
+            Adapter_Destroy(oldFront);
+        } else {
+            Adapter_Attach(oldFront);
+            Adapter_Destroy(newFront);
+        }
+    } else {
+        Adapter_Detach(Mod_Pnp.Ports[index].Adapter);
+        Adapter_Destroy(Mod_Pnp.Ports[index].Adapter);
+        Mod_Pnp.Ports[index].Adapter            = NULL;
+        Mod_Pnp.Ports[index].LastAdapterFactory = NULL;
+    }
+}
+
+extern bool Hal_Pnp_GetPins(int inputPort, struct hal_pins *pins) {
+    if (inputPort < 0 || inputPort >= 4) return false;
+
+    Adapter_GetPins(Mod_Pnp.Ports[inputPort].Adapter, &Mod_Pnp.Ports[inputPort + 0].EmulatedPins);
+    *pins = Mod_Pnp.Ports[inputPort + 0].EmulatedPins;
+    return true;
+}
+
+extern bool Hal_Pnp_SetPins(int inputPort, struct hal_pins pins) {
+    if (inputPort < 0 || inputPort >= 4) return false;
+
+    Mod_Pnp.Ports[inputPort + 0].EmulatedPins = pins;
+    Adapter_SetPins(Mod_Pnp.Ports[inputPort].Adapter, Mod_Pnp.Ports[inputPort + 0].EmulatedPins);
+    return true;
 }

@@ -45,7 +45,7 @@ typedef enum __attribute__((packed)) {
     PNP_DEVICE_SENSOR_EV3_SONIC, // essential
     PNP_DEVICE_SENSOR_EV3_GYRO, // essential
     PNP_DEVICE_SENSOR_EV3_IR, // essential
-} pnp_device_t;
+} pnp_type_t;
 
 typedef enum {
     PNP_MODE_NXT_TOUCH_PRESS = 0,
@@ -101,12 +101,12 @@ typedef enum {
 } nxt_energy_mode_t;
 
 typedef enum {
-    PNP_MODE_EV3_COLOR_REFLECT = 0,
-    PNP_MODE_EV3_COLOR_AMBIENT = 1,
-    PNP_MODE_EV3_COLOR_COLORID = 2,
-    PNP_MODE_EV3_COLOR_REF_RAW = 3,
-    PNP_MODE_EV3_COLOR_RGB_RAW = 4,
-    PNP_MODE_EV3_COLOR_CALREAD = 5,
+    PNP_MODE_EV3_COLOR_REFLECT   = 0,
+    PNP_MODE_EV3_COLOR_AMBIENT   = 1,
+    PNP_MODE_EV3_COLOR_COLORID   = 2,
+    PNP_MODE_EV3_COLOR_REF_RAW   = 3,
+    PNP_MODE_EV3_COLOR_RGB_RAW   = 4,
+    PNP_MODE_EV3_COLOR_CALIBRATE = 5,
 } ev3_color_mode_t;
 
 typedef enum {
@@ -129,5 +129,77 @@ typedef enum {
     PNP_MODE_EV3_IR_SEEKER    = 1,
     PNP_MODE_EV3_IR_REMOTE    = 2,
 } ev3_ir_mode_t;
+
+/* Constants related to Digital I/O */
+typedef enum {
+    DIGI0 = 1,
+    DIGI1 = 2
+} pin_t;
+
+enum {
+    CUSTOMINACTIVE = 0x00,
+    CUSTOM9V       = 0x01,
+    CUSTOMACTIVE   = 0x02
+};
+
+#define PIN_LOW 0
+#define PIN_HIGH 1
+#define DIR_IN 0
+#define DIR_OUT 1
+typedef enum {
+    POWER_AUX_OFF = 0,
+    POWER_AUX_RCX = 1,
+    POWER_AUX_9V  = 2
+} pwr_aux_t;
+
+struct hal_pins {
+    uint8_t d0_out : 1;
+    uint8_t d1_out : 1;
+    uint8_t d0_dir : 1;
+    uint8_t d1_dir : 1;
+    uint8_t d0_in : 1;
+    uint8_t d1_in : 1;
+    uint8_t pwr_mode : 2;
+};
+
+/* Constants related to sensor type  */
+typedef enum __attribute__((packed)) {
+    NO_SENSOR          = 0,
+    SWITCH             = 1,
+    TEMPERATURE        = 2,
+    REFLECTION         = 3,
+    ANGLE              = 4,
+    LIGHT_ACTIVE       = 5,
+    LIGHT_INACTIVE     = 6,
+    SOUND_DB           = 7,
+    SOUND_DBA          = 8,
+    CUSTOM             = 9,
+    LOWSPEED           = 10,
+    LOWSPEED_9V        = 11,
+    HIGHSPEED          = 12,
+    COLORFULL          = 13,
+    COLORRED           = 14,
+    COLORGREEN         = 15,
+    COLORBLUE          = 16,
+    COLORNONE          = 17,
+    COLOREXIT          = 18, /* For internal use when going from color or Lamp to no_sensor*/
+    EV3SENSOR          = 19,
+    NO_OF_SENSOR_TYPES = 19
+} hal_nxt_type_t;
+
+/* Constants related to sensor mode */
+typedef enum __attribute__((packed)) {
+    RAWMODE           = 0x00,
+    BOOLEANMODE       = 0x20,
+    TRANSITIONCNTMODE = 0x40,
+    PERIODCOUNTERMODE = 0x60,
+    PCTFULLSCALEMODE  = 0x80,
+    CELSIUSMODE       = 0xA0,
+    FAHRENHEITMODE    = 0xC0,
+    ANGLESTEPSMODE    = 0xE0,
+    SLOPEMASK         = 0x1F,
+    MODEMASK          = 0xE0
+} hal_nxt_mode_t;
+
 
 #endif //HAL_PNP_DEFS
