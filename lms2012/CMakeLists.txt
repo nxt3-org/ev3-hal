@@ -8,6 +8,8 @@ add_library(nxthal_lms2012 STATIC
         include/comm/hal_bt.private.h
         include/comm/hal_rs485.private.h
         include/comm/hal_usb.private.h
+        include/comm/ev3proto.h
+        include/comm/ev3proto.private.h
         include/common/kdev_core.h
         include/common/kdevices.h
         include/fs/hal_filesystem.private.h
@@ -43,6 +45,7 @@ add_library(nxthal_lms2012 STATIC
         src/comm/hal_bt.c
         src/comm/hal_rs485.c
         src/comm/hal_usb.c
+        src/comm/ev3proto.c
         src/common/kdev_core.c
         src/common/kdevices.c
         src/fs/hal_filesystem.c
