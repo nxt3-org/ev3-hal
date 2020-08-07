@@ -5,6 +5,7 @@
 
 extern bool Hal_Usb_RefAdd(void);
 extern bool Hal_Usb_RefDel(void);
+extern void Hal_Usb_Tick(void);
 
 extern void Hal_Usb_StoreBtAddress(const uint8_t *raw);
 extern void Hal_Usb_ResetState(void);

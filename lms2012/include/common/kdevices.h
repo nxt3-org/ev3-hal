@@ -85,8 +85,12 @@ typedef struct {
     uint8_t    Command_Length[NO_INPUTS];
 } uart_mmap_t;
 
+typedef enum __attribute__((packed)) {
+    USB_SPEED_FULL,
+    USB_SPEED_HIGH,
+} usb_speed_t;
 typedef struct {
-    uint8_t usbSpeed;
+    usb_speed_t usbSpeed;
     uint8_t padding[3];
 } usbdev_mmap_t;
 
