@@ -34,7 +34,8 @@ bool Hal_Usb_RefAdd(void) {
 
     if (!Ev3Proto_Init(&Mod_Usb.ev3,
                        (remotebuf_t) {Mod_Usb.rxBuffer, &Mod_Usb.rxCount},
-                       (remotebuf_t) {Mod_Usb.txBuffer, &Mod_Usb.txCount})) {
+                       (remotebuf_t) {Mod_Usb.txBuffer, &Mod_Usb.txCount},
+                       BUFFER_SIZE)) {
         goto closeFd;
     }
 

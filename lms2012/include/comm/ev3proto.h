@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <dirent.h>
 
 #define COMMAND_NXT3_HOST_TO_DEV      0x90
 #define COMMAND_NXT3_DEV_TO_HOST      0x91
@@ -26,25 +27,20 @@ typedef struct {
 typedef enum {
     HANDLE_CLOSED,
     HANDLE_RX,
+    HANDLE_TX
 } handle_mode_t;
-
-typedef struct {
-    uint32_t fileLength;
-    uint32_t sentLength;
-} download_state_t;
-
-typedef union {
-    download_state_t rx;
-} handle_cb_t;
 
 typedef struct {
     handle_mode_t mode;
     int           fd;
-    handle_cb_t   state;
+    DIR           *dirfd;
+    uint32_t      fileLength;
+    uint32_t      sentLength;
 } ev3_handle_t;
 
 typedef struct {
     int refCount;
+    int bufCapacity;
 
     remotebuf_t rx;
     remotebuf_t tx;
@@ -52,7 +48,7 @@ typedef struct {
     ev3_handle_t handles[MAX_PROTO_HANDLES];
 } channel_t;
 
-extern bool Ev3Proto_Init(channel_t *chan, remotebuf_t rx, remotebuf_t tx);
+extern bool Ev3Proto_Init(channel_t *chan, remotebuf_t rx, remotebuf_t tx, int bufferCapacity);
 extern bool Ev3Proto_RefDel(channel_t *chan);
 extern bool Ev3Proto_ConnEstablished(channel_t *chan);
 extern bool Ev3Proto_ConnLost(channel_t *chan);

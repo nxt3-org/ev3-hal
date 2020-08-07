@@ -4,20 +4,22 @@
 #include <errno.h>
 #include <bits/errno.h>
 #include <unistd.h>
-#include <memory.h>
 #include <stdio.h>
 #include "comm/ev3proto.h"
 #include "comm/ev3proto.private.h"
 
-bool Ev3Proto_Init(channel_t *chan, remotebuf_t rx, remotebuf_t tx) {
-    chan->refCount = 1;
-    chan->rx       = rx;
-    chan->tx       = tx;
+bool Ev3Proto_Init(channel_t *chan, remotebuf_t rx, remotebuf_t tx, int bufferCapacity) {
+    chan->refCount    = 1;
+    chan->rx          = rx;
+    chan->tx          = tx;
+    chan->bufCapacity = bufferCapacity;
 
     for (int i = 0; i < MAX_PROTO_HANDLES; i++) {
-        chan->handles[i].mode = HANDLE_CLOSED;
-        chan->handles[i].fd   = -1;
-        memset(&chan->handles[i].state, 0, sizeof(chan->handles[i].state));
+        chan->handles[i].mode       = HANDLE_CLOSED;
+        chan->handles[i].fd         = -1;
+        chan->handles[i].dirfd      = NULL;
+        chan->handles[i].fileLength = 0;
+        chan->handles[i].sentLength = 0;
     }
     return true;
 }
@@ -26,7 +28,7 @@ bool Ev3Proto_RefDel(channel_t *chan) {
     if (chan->refCount == 0)
         return false;
     if (chan->refCount == 1) {
-        // free resources
+        Ev3Proto_ConnLost(chan);
     }
     chan->refCount--;
     return true;
@@ -54,7 +56,7 @@ bool Ev3Proto_SystemCommand(channel_t *chan) {
     int     *pOutLen = chan->tx.pLength;
     int     inLen    = 2 + (inBuf[1] << 8 | inBuf[0] << 0);
     if (inLen < 6) return false;
-    if (inLen > 1024) return false;
+    if (inLen > *chan->rx.pLength) return false;
 
     int inCounter = inBuf[3] << 8 | inBuf[2] << 0;
     bool inQuiet;
@@ -77,7 +79,7 @@ bool Ev3Proto_SystemCommand(channel_t *chan) {
         return false;
 
     case SYSCMD_BEGIN_RX: {
-        if (inLen < 11) return false;
+        if (inLen < 11) break;
 
         uint32_t fileLen = inBuf[9] << 24 | inBuf[8] << 16 | inBuf[7] << 8 | inBuf[6] << 0;
         inBuf[inLen - 1] = '\0';
@@ -91,7 +93,7 @@ bool Ev3Proto_SystemCommand(channel_t *chan) {
         break;
     }
     case SYSCMD_CONTINUE_RX: {
-        if (inLen < 7) return false;
+        if (inLen < 7) break;
         file_handle_t hnd     = inBuf[6];
         uint8_t       *data   = &inBuf[7];
         uint32_t      dataLen = inLen - 7;
@@ -102,24 +104,69 @@ bool Ev3Proto_SystemCommand(channel_t *chan) {
         resultLen = 1;
         break;
     }
-    case SYSCMD_BEGIN_TX: {
+    case SYSCMD_BEGIN_TX:
+    case SYSCMD_BEGIN_TXI: {
+        if (inLen < 9) break;
+
+        uint16_t thisRead = inBuf[7] << 8 | inBuf[6] << 0;
+        inBuf[inLen - 1] = '\0';
+        const char *name = (const char *) &inBuf[8];
+
+        file_handle_t hnd     = 0;
+        uint32_t      fileLen = 0;
+        int           realOut = 0;
+        status  = Ev3Proto_BeginTx(chan, name, thisRead,
+                                   &fileLen, &hnd,
+                                   &resultBuf[5], chan->bufCapacity - 12, &realOut);
+        success = status == SYSSTATE_SUCCESS || status == SYSSTATE_EOF;
+        resultBuf[0] = (fileLen >> 0) & 0xFF;
+        resultBuf[1] = (fileLen >> 8) & 0xFF;
+        resultBuf[2] = (fileLen >> 16) & 0xFF;
+        resultBuf[3] = (fileLen >> 24) & 0xFF;
+        resultBuf[4] = hnd;
+        resultLen = 5 + realOut;
         break;
     }
     case SYSCMD_CONTINUE_TX: {
-        break;
-    }
-    case SYSCMD_BEGIN_TXI: {
+        if (inLen < 9) break;
+
+        file_handle_t hnd      = inBuf[6];
+        uint16_t      thisRead = inBuf[8] << 8 | inBuf[7] << 0;
+
+        uint32_t fileLen = 0;
+        int      realOut = 0;
+        status  = Ev3Proto_ContinueTx(chan, hnd, thisRead, &fileLen,
+                                      &resultBuf[1], chan->bufCapacity - 8, &realOut);
+        success = status == SYSSTATE_SUCCESS || status == SYSSTATE_EOF;
+        resultBuf[0] = hnd;
+        resultLen = 1 + realOut;
         break;
     }
     case SYSCMD_CONTINUE_TXI: {
+        if (inLen < 9) break;
+
+        file_handle_t hnd      = inBuf[6];
+        uint16_t      thisRead = inBuf[8] << 8 | inBuf[7] << 0;
+
+        uint32_t fileLen = 0;
+        int      realOut = 0;
+        status  = Ev3Proto_ContinueTx(chan, hnd, thisRead, &fileLen,
+                                      &resultBuf[5], chan->bufCapacity - 12, &realOut);
+        success = status == SYSSTATE_SUCCESS || status == SYSSTATE_EOF;
+        resultBuf[0] = (fileLen >> 0) & 0xFF;
+        resultBuf[1] = (fileLen >> 8) & 0xFF;
+        resultBuf[2] = (fileLen >> 16) & 0xFF;
+        resultBuf[3] = (fileLen >> 24) & 0xFF;
+        resultBuf[4] = hnd;
+        resultLen = 5 + realOut;
         break;
     }
     case SYSCMD_CLOSE: {
-        if (inLen < 7) return false;
+        if (inLen < 7) break;
         file_handle_t hnd = inBuf[6];
-        status    = Ev3Proto_Close(chan, hnd);
-        success   = status == SYSSTATE_SUCCESS;
-        resultLen = 0;
+        status            = Ev3Proto_Close(chan, hnd);
+        success           = status == SYSSTATE_SUCCESS;
+        resultLen         = 0;
         break;
     }
     case SYSCMD_BEGIN_LS: {
@@ -129,7 +176,7 @@ bool Ev3Proto_SystemCommand(channel_t *chan) {
         break;
     }
     case SYSCMD_MKDIR: {
-        if (inLen < 7) return false;
+        if (inLen < 7) break;
         inBuf[inLen - 1] = '\0';
         char *name = (char *) &inBuf[6];
 
@@ -139,7 +186,7 @@ bool Ev3Proto_SystemCommand(channel_t *chan) {
         break;
     }
     case SYSCMD_REMOVE: {
-        if (inLen < 7) return false;
+        if (inLen < 7) break;
         inBuf[inLen - 1] = '\0';
         char *name = (char *) &inBuf[6];
 
@@ -168,12 +215,12 @@ bool Ev3Proto_SystemCommand(channel_t *chan) {
     return true;
 }
 
-system_status_t Ev3Proto_BeginRx(channel_t *chan, uint32_t length, char *name, file_handle_t *hnd) {
+system_status_t Ev3Proto_BeginRx(channel_t *chan, uint32_t length, char *name, file_handle_t *pHnd) {
     if (!Ev3Proto_RecursiveMkdir(name, NULL))
         goto fail;
 
-    *hnd = Ev3Proto_FindFreeHandle(chan);
-    if (*hnd == NO_PROTO_HANDLES) return SYSSTATE_OUT_OF_HANDLES;
+    *pHnd = Ev3Proto_FindFreeHandle(chan);
+    if (*pHnd == NO_PROTO_HANDLES) return SYSSTATE_OUT_OF_HANDLES;
 
     // unlink first
     // this should allow updating NXT3 from within NXT3
@@ -184,11 +231,11 @@ system_status_t Ev3Proto_BeginRx(channel_t *chan, uint32_t length, char *name, f
     if (fchmod(fd, 00777) < 0) goto failCloseFd;
     if (ftruncate(fd, length) < 0) goto failCloseFd;
 
-    ev3_handle_t *pH = &chan->handles[*hnd];
-    pH->mode                = HANDLE_RX;
-    pH->fd                  = fd;
-    pH->state.rx.fileLength = length;
-    pH->state.rx.sentLength = 0;
+    ev3_handle_t *pH = &chan->handles[*pHnd];
+    pH->mode       = HANDLE_RX;
+    pH->fd         = fd;
+    pH->fileLength = length;
+    pH->sentLength = 0;
     return SYSSTATE_SUCCESS;
 
 failCloseFd:;
@@ -203,27 +250,103 @@ system_status_t Ev3Proto_ContinueRx(channel_t *chan, uint8_t *data, uint32_t len
     ev3_handle_t *pH = Ev3Proto_GetHandle(chan, hnd, HANDLE_RX);
     if (pH == NULL) return SYSSTATE_UNKNOWN_HANDLE;
 
-    uint32_t oldPos = pH->state.rx.sentLength;
+    // calculate delta
+    uint32_t oldPos = pH->sentLength;
     uint32_t newPos = oldPos + len;
     if (newPos < oldPos) newPos = 0xFFFFFFFF; // overflow
     uint32_t inputDelta  = newPos - oldPos;
-    uint32_t outputDelta = pH->state.rx.fileLength - oldPos;
+    uint32_t outputDelta = pH->fileLength - oldPos;
+    uint32_t delta       = inputDelta < outputDelta ? inputDelta : outputDelta;
 
-    uint32_t delta = inputDelta < outputDelta ? inputDelta : outputDelta;
-
+    // write loop
     while (delta != 0) {
-        int real = pwrite(pH->fd, data, delta, pH->state.rx.sentLength);
+        int real = pwrite(pH->fd, data, delta, pH->sentLength);
         if (real < 0) {
             if (errno == EINTR)
                 continue;
             return Ev3Proto_Errno();
         }
         if (real > delta) real = delta;
-        pH->state.rx.sentLength += real;
+        pH->sentLength += real;
         delta -= real;
+        data += real;
     }
 
-    if (pH->state.rx.sentLength == pH->state.rx.fileLength) {
+    // finalize
+    if (pH->sentLength == pH->fileLength) {
+        fsync(pH->fd);
+        close(pH->fd);
+        pH->fd   = -1;
+        pH->mode = HANDLE_CLOSED;
+        return SYSSTATE_EOF;
+    } else {
+        return SYSSTATE_SUCCESS;
+    }
+}
+
+system_status_t Ev3Proto_BeginTx(channel_t *chan,
+                                 const char *name, uint16_t thisRead,
+                                 uint32_t *pLength, file_handle_t *pHnd,
+                                 uint8_t *outBuffer, int outMaxLen, int *realOutLen) {
+    *pHnd = Ev3Proto_FindFreeHandle(chan);
+    if (*pHnd == NO_PROTO_HANDLES) return SYSSTATE_OUT_OF_HANDLES;
+
+    int fd = open(name, O_RDONLY);
+    if (fd < 0)
+        return Ev3Proto_Errno();
+
+    ev3_handle_t *pH = &chan->handles[*pHnd];
+    pH->mode       = HANDLE_TX;
+    pH->fd         = fd;
+    pH->fileLength = 0;
+    pH->sentLength = 0;
+
+    return Ev3Proto_ContinueTx(chan, *pHnd, thisRead, pLength, outBuffer, outMaxLen, realOutLen);
+}
+
+system_status_t Ev3Proto_ContinueTx(channel_t *chan,
+                                    file_handle_t hnd, uint16_t thisRead,
+                                    uint32_t *pLength,
+                                    uint8_t *outBuffer, int outMaxLen, int *realOutLen) {
+    if (thisRead > outMaxLen) return SYSSTATE_BAD_SIZE;
+
+    ev3_handle_t *pH = Ev3Proto_GetHandle(chan, hnd, HANDLE_TX);
+    if (pH == NULL) return SYSSTATE_UNKNOWN_HANDLE;
+
+    // get real size
+    struct stat info;
+    if (fstat(pH->fd, &info) < 0)
+        return Ev3Proto_Errno();
+    if (!S_ISREG(info.st_mode))
+        return SYSSTATE_CORRUPT_FILE; // symlinks not supported
+    pH->fileLength = *pLength = info.st_size;
+
+    // calculate delta
+    uint32_t oldPos = pH->sentLength;
+    uint32_t newPos = oldPos + thisRead;
+    if (newPos < oldPos) newPos = 0xFFFFFFFF; // overflow
+    uint32_t inputDelta  = newPos - oldPos;
+    uint32_t outputDelta = pH->fileLength - oldPos;
+    uint32_t delta       = inputDelta < outputDelta ? inputDelta : outputDelta;
+
+    *realOutLen = delta;
+
+    // read loop
+    while (delta != 0) {
+        int real = pread(pH->fd, outBuffer, delta, pH->sentLength);
+        if (real < 0) {
+            if (errno == EINTR)
+                continue;
+            return Ev3Proto_Errno();
+        }
+        if (real > delta) real = delta;
+        pH->sentLength += real;
+        delta -= real;
+        outBuffer += real;
+    }
+
+    // finalize
+    if (pH->sentLength == pH->fileLength) {
         fsync(pH->fd);
         close(pH->fd);
         pH->fd   = -1;
@@ -244,6 +367,11 @@ system_status_t Ev3Proto_Close(channel_t *chan, file_handle_t hnd) {
         close(pH->fd);
         pH->fd = -1;
     }
+    if (pH->dirfd) {
+        closedir(pH->dirfd);
+        pH->dirfd = NULL;
+    }
+    pH->mode         = HANDLE_CLOSED;
     return SYSSTATE_SUCCESS;
 }
 
