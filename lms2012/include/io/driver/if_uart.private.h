@@ -12,6 +12,7 @@ typedef enum __attribute__((packed)) {
     UART_READY,
     UART_WAITING_FOR_WRITE,
     UART_WAITING_FOR_SWITCH,
+    UART_WAITING_FOR_STABILITY,
     UART_TTY
 } uart_state_t;
 

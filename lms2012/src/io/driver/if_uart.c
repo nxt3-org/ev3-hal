@@ -12,6 +12,7 @@ static const typedata_t *GetTypedata(int port, int mode);
 static void ProbeAndGo(int port);
 static void GoReboot(int port);
 static void GoSwitch(int port);
+static void GoWait(int port);
 static void GoOff(int port);
 
 static bool RefAdd(void) {
@@ -83,6 +84,7 @@ static bool Present(int port) {
 
     return Drv_Uart.state[port] == UART_READY ||
            Drv_Uart.state[port] == UART_WAITING_FOR_SWITCH ||
+           Drv_Uart.state[port] == UART_WAITING_FOR_STABILITY ||
            Drv_Uart.state[port] == UART_WAITING_FOR_WRITE;
 }
 
@@ -134,6 +136,19 @@ static void Tick(void) {
                 GoReboot(port);
 
             } else if (flags & UART_FLAG_DATA_READY) {
+                GoWait(port);
+
+            } else if (--Drv_Uart.timer[port] == 0) {
+                GoOff(port);
+            }
+            break;
+        }
+
+        case UART_WAITING_FOR_STABILITY: {
+            if (flags & UART_FLAG_PNP_CHANGE) {
+                GoReboot(port);
+
+            } else if (--Drv_Uart.timer[port] == 0) {
                 Drv_Uart.state[port] = UART_READY;
                 DriverUart.Sensor.ResetDatalog(port);
                 if (Drv_Uart.booting[port]) {
@@ -141,9 +156,6 @@ static void Tick(void) {
                     pnp_type_t type = IdentifyDevice(Drv_Uart.types[port][0].Main.Device);
                     Hal_Pnp_HandshakeFinished(port, false, type);
                 }
-
-            } else if (--Drv_Uart.timer[port] == 0) {
-                GoOff(port);
             }
             break;
         }
@@ -211,6 +223,11 @@ static void GoReboot(int port) {
 static void GoSwitch(int port) {
     Drv_Uart.state[port] = UART_WAITING_FOR_SWITCH;
     Drv_Uart.timer[port] = MAX_SWITCH_TIME;
+}
+
+static void GoWait(int port) {
+    Drv_Uart.state[port] = UART_WAITING_FOR_STABILITY;
+    Drv_Uart.timer[port] = Drv_Uart.types[Drv_Uart.devmap.mode[port]]->Main.ModeswitchMsec;
 }
 
 static void GoOff(int port) {
