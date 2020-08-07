@@ -62,7 +62,7 @@ static bool PnpStart(int port, dcm_link_t link, dcm_type_t type) {
     Drv_Uart.devmap.type[port] = DCM_DEV_UNKNOWN;
     Drv_Uart.devmap.mode[port] = 0;
     Drv_Uart.booting[port]     = true;
-    Drv_Uart_KernelUpload(port);
+    Drv_Uart_KernelUpload(1 << port);
     GoReboot(port);
     return true;
 }
@@ -74,7 +74,7 @@ static void PnpStop(int port) {
     Drv_Uart.devmap.type[port] = DCM_DEV_NONE;
     Drv_Uart.devmap.mode[port] = 0;
     Drv_Uart.booting[port]     = false;
-    Drv_Uart_KernelUpload(port);
+    Drv_Uart_KernelUpload(1 << port);
     Drv_Uart.state[port] = UART_OFF;
 }
 
@@ -97,7 +97,7 @@ static bool Switch(int port, int hwMode) {
     if (Drv_Uart.devmap.mode[port] == hwMode) return true;
 
     Drv_Uart.devmap.mode[port] = hwMode;
-    Drv_Uart_KernelUpload(port);
+    Drv_Uart_KernelUpload(1 << port);
     GoSwitch(port);
     return true;
 }
