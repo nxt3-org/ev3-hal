@@ -14,7 +14,7 @@ bool Drv_Motor_KernelSetTypes(void) {
         .cmd   = CMD_SET_MOTOR_TYPE,
         .types = {types[0], types[1], types[2], types[3]}
     };
-    return Kdev_Write(&DevicePwm, &req, sizeof(req), 0) >= 0;
+    return Kdev_Pwrite(&DevicePwm, &req, sizeof(req), 0) >= 0;
 }
 
 bool Drv_Motor_KernelStart(int mPort) {
@@ -23,7 +23,7 @@ bool Drv_Motor_KernelStart(int mPort) {
         .mask    = 1 << mPort,
     };
 
-    return Kdev_Write(&DevicePwm, &req, sizeof(req), 0) >= 0;
+    return Kdev_Pwrite(&DevicePwm, &req, sizeof(req), 0) >= 0;
 }
 
 bool Drv_Motor_KernelStop(int mPort, motor_stop_t stop) {
@@ -33,7 +33,7 @@ bool Drv_Motor_KernelStop(int mPort, motor_stop_t stop) {
         .doBrake = stop == STOP_MODE_BRAKE
     };
 
-    return Kdev_Write(&DevicePwm, &req, sizeof(req), 0) >= 0;
+    return Kdev_Pwrite(&DevicePwm, &req, sizeof(req), 0) >= 0;
 }
 
 bool Drv_Motor_KernelStopAll(void) {
@@ -42,7 +42,7 @@ bool Drv_Motor_KernelStopAll(void) {
         .mask  = 0x0F,
         .power = 0,
     };
-    if (Kdev_Write(&DevicePwm, &req1, sizeof(req1), 0) < 0)
+    if (Kdev_Pwrite(&DevicePwm, &req1, sizeof(req1), 0) < 0)
         return false;
 
     pwm_req_output_stop req2 = {
@@ -50,7 +50,7 @@ bool Drv_Motor_KernelStopAll(void) {
         .mask       = 0x0F,
         .doBrake    = false
     };
-    return Kdev_Write(&DevicePwm, &req2, sizeof(req2), 0) >= 0;
+    return Kdev_Pwrite(&DevicePwm, &req2, sizeof(req2), 0) >= 0;
 }
 
 bool Drv_Motor_KernelSetPolarity(void) {
@@ -59,21 +59,21 @@ bool Drv_Motor_KernelSetPolarity(void) {
         .mask       = 0x0F,
         .multiplier = POLARITY_FORWARD
     };
-    return Kdev_Write(&DevicePwm, &req2, sizeof(req2), 0) >= 0;
+    return Kdev_Pwrite(&DevicePwm, &req2, sizeof(req2), 0) >= 0;
 }
 
 bool Drv_Motor_KernelPowerOn(void) {
     pwm_req_program_start req1 = {
         .cmd = CMD_PROGRAM_START
     };
-    return Kdev_Write(&DevicePwm, &req1, sizeof(req1), 0) >= 0;
+    return Kdev_Pwrite(&DevicePwm, &req1, sizeof(req1), 0) >= 0;
 }
 
 bool Drv_Motor_KernelPowerOff(void) {
     pwm_req_program_stop exitReq = {
         .cmd = CMD_PROGRAM_STOP
     };
-    return Kdev_Write(&DevicePwm, &exitReq, sizeof(exitReq), 0) >= 0;
+    return Kdev_Pwrite(&DevicePwm, &exitReq, sizeof(exitReq), 0) >= 0;
 }
 
 bool Drv_Motor_KernelTachoReset(int port) {
@@ -82,7 +82,7 @@ bool Drv_Motor_KernelTachoReset(int port) {
         .mask  = 1 << port,
     };
 
-    return Kdev_Write(&DevicePwm, &req, sizeof(req), 0) >= 0;
+    return Kdev_Pwrite(&DevicePwm, &req, sizeof(req), 0) >= 0;
 }
 
 bool Drv_Motor_KernelSetPwm(int port, int pwm) {
@@ -91,5 +91,5 @@ bool Drv_Motor_KernelSetPwm(int port, int pwm) {
         .mask  = 1 << port,
         .power = pwm,
     };
-    return Kdev_Write(&DevicePwm, &req, sizeof(req), 0) >= 0;
+    return Kdev_Pwrite(&DevicePwm, &req, sizeof(req), 0) >= 0;
 }

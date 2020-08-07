@@ -47,7 +47,7 @@ int writePCM(void *samples, size_t size) {
     sound_req_data req = {.cmd = CMD_DATA};
     memcpy(req.samples, samples, size);
 
-    int written = Kdev_Write(&DeviceSound, &req, size + 1, 0);
+    int written = Kdev_Pwrite(&DeviceSound, &req, size + 1, 0);
 
     return written < 0 ? SOUND_RESULT_ERROR :
            (written == 0 ? SOUND_RESULT_BUSY : SOUND_RESULT_SENT);

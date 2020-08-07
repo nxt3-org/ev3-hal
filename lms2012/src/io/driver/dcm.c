@@ -69,7 +69,7 @@ bool Dcm_SetPins(int port, char code) {
     char string[] = "----";
     string[port] = code;
 
-    return Kdev_Write(&DeviceConnMgr, string, sizeof(string), 0) >= 0;
+    return Kdev_Pwrite(&DeviceConnMgr, string, sizeof(string), 0) >= 0;
 }
 
 int16_t Dcm_MeasureAutoID(int port, bool output) {

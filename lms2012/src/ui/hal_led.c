@@ -41,5 +41,5 @@ bool Hal_Led_SetMode(brick_ledmode_t mode) {
         .padding = '\0'
     };
 
-    return Kdev_Write(&DeviceUi, &req, sizeof(req), 0) >= 0;
+    return Kdev_Pwrite(&DeviceUi, &req, sizeof(req), 0) >= 0;
 }

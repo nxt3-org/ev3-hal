@@ -37,7 +37,7 @@ const char *Hal_General_GetPlatformHwVersion(void) {
 
     if (VersionBuffer[0] == '\0') {
         if (Kdev_RefAdd(&DeviceUi)) {
-            if (Kdev_Read(&DeviceUi, VersionBuffer, sizeof(VersionBuffer), 0) < 0) {
+            if (Kdev_Pread(&DeviceUi, VersionBuffer, sizeof(VersionBuffer), 0) < 0) {
                 result = "unknown";
             }
 

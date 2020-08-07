@@ -42,8 +42,10 @@
 extern bool Kdev_RefAdd(void *pDevice);
 extern bool Kdev_RefDel(void *pDevice);
 
-extern ssize_t Kdev_Write(const void *pDevice, const void *buffer, size_t length, size_t offset);
-extern ssize_t Kdev_Read(const void *pDevice, void *buffer, size_t length, size_t offset);
+extern ssize_t Kdev_Write(const void *pDevice, const void *buffer, size_t length);
+extern ssize_t Kdev_Read(const void *pDevice, void *buffer, size_t length);
+extern ssize_t Kdev_Pwrite(const void *pDevice, const void *buffer, size_t length, size_t offset);
+extern ssize_t Kdev_Pread(const void *pDevice, void *buffer, size_t length, size_t offset);
 extern int Kdev_Ioctl(const void *pDevice, unsigned long request, void *data);
 
 extern void Kdev_LogError(const char *operation, const char *path);

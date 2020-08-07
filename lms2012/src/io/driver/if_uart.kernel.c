@@ -47,7 +47,7 @@ bool Drv_Uart_KernelWrite(uint8_t sPort, const uint8_t *buffer, uint8_t length) 
     uint8_t command[1 + MAX_UART_MSGLEN];
     command[0] = sPort;
     memcpy(command + 1, buffer, length);
-    if (Kdev_Write(&DeviceUart, command, 1 + length, 0) >= 0) {
+    if (Kdev_Pwrite(&DeviceUart, command, 1 + length, 0) >= 0) {
         DeviceUart.mmap->Flags[sPort] |= UART_FLAG_SENDING;
         return true;
     }

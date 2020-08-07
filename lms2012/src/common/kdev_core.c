@@ -64,30 +64,56 @@ bool Kdev_RefDel(void *pDeviceG) {
     return true;
 }
 
-ssize_t Kdev_Write(const void *pDeviceG, const void *buffer, size_t length, size_t offset) {
-    const kdev_real_t *pDevice = pDeviceG;
+ssize_t Kdev_Pwrite(const void *device, const void *buffer, size_t length, size_t offset) {
+    const kdev_real_t *pDevice = device;
 
     if (pDevice->refCount <= 0)
         return false;
 
     int written = pwrite(pDevice->fd, buffer, length, offset);
     if (written < 0) {
-        Kdev_LogError("write", pDevice->path);
+        Kdev_LogError("pwrite", pDevice->path);
     }
     return written;
 }
 
-ssize_t Kdev_Read(const void *pDeviceG, void *buffer, size_t length, size_t offset) {
-    const kdev_real_t *pDevice = pDeviceG;
+ssize_t Kdev_Pread(const void *device, void *buffer, size_t length, size_t offset) {
+    const kdev_real_t *pDevice = device;
 
     if (pDevice->refCount <= 0)
         return false;
 
     int read = pread(pDevice->fd, buffer, length, offset);
     if (read < 0) {
-        Kdev_LogError("read", pDevice->path);
+        Kdev_LogError("pread", pDevice->path);
     }
     return read;
+}
+
+ssize_t Kdev_Write(const void *device, const void *buffer, size_t length) {
+    const kdev_real_t *pDevice = device;
+
+    if (pDevice->refCount <= 0)
+        return false;
+
+    int written = write(pDevice->fd, buffer, length);
+    if (written < 0) {
+        Kdev_LogError("write", pDevice->path);
+    }
+    return written;
+}
+
+ssize_t Kdev_Read(const void *device, void *buffer, size_t length) {
+    const kdev_real_t *pDevice = device;
+
+    if (pDevice->refCount <= 0)
+        return false;
+
+    int bytes = read(pDevice->fd, buffer, length);
+    if (bytes < 0) {
+        Kdev_LogError("read", pDevice->path);
+    }
+    return bytes;
 }
 
 int Kdev_Ioctl(const void *pDeviceG, unsigned long request, void *data) {

@@ -42,7 +42,7 @@ bool Hal_Sound_Stop(void) {
 }
 
 bool writeCommand(void *buffer, uint32_t size, bool busy) {
-    int written = Kdev_Write(&DeviceSound, buffer, size, 0);
+    int written = Kdev_Pwrite(&DeviceSound, buffer, size, 0);
     if (written >= 0 && busy)
         DeviceSound.mmap->fifo_state = FIFO_PROCESSING;
     return written >= 0;
