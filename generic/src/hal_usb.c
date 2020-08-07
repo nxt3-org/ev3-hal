@@ -19,12 +19,12 @@ bool Hal_Usb_RemoveHandle(handle_t hnd) {
     return ok;
 }
 
-handle_t Hal_Usb_GetNextHandle(uint32_t *pPosition) {
+errhnd_t Hal_Usb_GetNextHandle(uint32_t *pPosition) {
     for (; (*pPosition) < MAX_HANDLES; (*pPosition)++) {
         if (usbHandles[*pPosition]) {
             (*pPosition)++;
             return *pPosition;
         }
     }
-    return MAX_HANDLES;
+    return NOMOREHANDLES;
 }
