@@ -68,7 +68,7 @@ void TransformBlock(const float *rawIn,
             pctOut[i] = NAN;
     }
     if (siOut) {
-        Transform(rawIn, pctOut, realSlots, info, UNIT_SI, clip);
+        Transform(rawIn, siOut, realSlots, info, UNIT_SI, clip);
         for (int i = realSlots; i < fullSlots; i++)
             siOut[i] = NAN;
     }
