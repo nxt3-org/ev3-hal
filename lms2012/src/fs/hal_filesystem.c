@@ -366,6 +366,8 @@ errhnd_t Hal_Fs_LocateNext(handle_t handle, char *name, uint32_t *pLength) {
 
     struct dirent *pEntry;
     while ((err = posixFsBrowseNext(pH->queryDir, &pEntry)) == SUCCESS) {
+        if (pEntry->d_type != DT_REG)
+            continue;
         if (SUCCESS == Hal_Fs_CheckQuery(pEntry->d_name, &pH->query)) {
             break;
         }
