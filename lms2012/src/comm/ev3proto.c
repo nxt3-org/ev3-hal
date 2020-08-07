@@ -104,6 +104,7 @@ bool Ev3Proto_SystemCommand(channel_t *chan) {
         resultLen = 1;
         break;
     }
+    case SYSCMD_BEGIN_LS:
     case SYSCMD_BEGIN_TX:
     case SYSCMD_BEGIN_TXI: {
         if (inLen < 9) break;
@@ -115,10 +116,13 @@ bool Ev3Proto_SystemCommand(channel_t *chan) {
         file_handle_t hnd     = 0;
         uint32_t      fileLen = 0;
         int           realOut = 0;
-        status  = Ev3Proto_BeginTx(chan, name, thisRead,
-                                   &fileLen, &hnd,
-                                   &resultBuf[5], chan->bufCapacity - 12, &realOut);
-        success = status == SYSSTATE_SUCCESS || status == SYSSTATE_EOF;
+        if (inCmd == SYSCMD_BEGIN_LS)
+            status = Ev3Proto_BeginLs(chan, name, thisRead, &fileLen, &hnd,
+                                      &resultBuf[5], chan->bufCapacity - 12, &realOut);
+        else
+            status = Ev3Proto_BeginTx(chan, name, thisRead, &fileLen, &hnd,
+                                      &resultBuf[5], chan->bufCapacity - 12, &realOut);
+        success    = status == SYSSTATE_SUCCESS || status == SYSSTATE_EOF;
         resultBuf[0] = (fileLen >> 0) & 0xFF;
         resultBuf[1] = (fileLen >> 8) & 0xFF;
         resultBuf[2] = (fileLen >> 16) & 0xFF;
@@ -127,6 +131,7 @@ bool Ev3Proto_SystemCommand(channel_t *chan) {
         resultLen = 5 + realOut;
         break;
     }
+    case SYSCMD_CONTINUE_LS:
     case SYSCMD_CONTINUE_TX: {
         if (inLen < 9) break;
 
@@ -135,9 +140,13 @@ bool Ev3Proto_SystemCommand(channel_t *chan) {
 
         uint32_t fileLen = 0;
         int      realOut = 0;
-        status  = Ev3Proto_ContinueTx(chan, hnd, thisRead, &fileLen,
-                                      &resultBuf[1], chan->bufCapacity - 8, &realOut);
-        success = status == SYSSTATE_SUCCESS || status == SYSSTATE_EOF;
+        if (inCmd == SYSCMD_CONTINUE_LS)
+            status = Ev3Proto_ContinueLs(chan, hnd, thisRead,
+                                         &resultBuf[1], chan->bufCapacity - 8, &realOut);
+        else
+            status = Ev3Proto_ContinueTx(chan, hnd, thisRead, &fileLen,
+                                         &resultBuf[1], chan->bufCapacity - 8, &realOut);
+        success    = status == SYSSTATE_SUCCESS || status == SYSSTATE_EOF;
         resultBuf[0] = hnd;
         resultLen = 1 + realOut;
         break;
@@ -169,16 +178,10 @@ bool Ev3Proto_SystemCommand(channel_t *chan) {
         resultLen         = 0;
         break;
     }
-    case SYSCMD_BEGIN_LS: {
-        break;
-    }
-    case SYSCMD_CONTINUE_LS: {
-        break;
-    }
     case SYSCMD_MKDIR: {
         if (inLen < 7) break;
         inBuf[inLen - 1] = '\0';
-        char *name = (char *) &inBuf[6];
+        char *name       = (char *) &inBuf[6];
 
         status    = Ev3Proto_Mkdir(name);
         success   = status == SYSSTATE_SUCCESS;
@@ -355,6 +358,19 @@ system_status_t Ev3Proto_ContinueTx(channel_t *chan,
     } else {
         return SYSSTATE_SUCCESS;
     }
+}
+
+system_status_t
+Ev3Proto_BeginLs(channel_t *chan, const char *name, uint16_t thisRead,
+                 uint32_t *pLength, file_handle_t *pHnd,
+                 uint8_t *outBuffer, int outMaxLen, int *realOutLen) {
+    return SYSSTATE_UNKNOWN_ERROR;
+}
+
+system_status_t
+Ev3Proto_ContinueLs(channel_t *chan, file_handle_t hnd, uint16_t thisRead,
+                    uint8_t *outBuffer, int outMaxLen, int *realOutLen) {
+    return SYSSTATE_UNKNOWN_ERROR;
 }
 
 system_status_t Ev3Proto_Close(channel_t *chan, file_handle_t hnd) {

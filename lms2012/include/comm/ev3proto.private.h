@@ -39,6 +39,9 @@ extern system_status_t Ev3Proto_ContinueRx(channel_t *chan, uint8_t *data, uint3
 extern system_status_t Ev3Proto_BeginTx(channel_t *chan, const char *name, uint16_t thisRead, uint32_t *pLength, file_handle_t *pHnd, uint8_t *outBuffer, int outMaxLen, int *realOutLen);
 extern system_status_t Ev3Proto_ContinueTx(channel_t *chan, file_handle_t hnd, uint16_t thisRead, uint32_t *pLength, uint8_t *outBuffer, int outMaxLen, int *realOutLen);
 
+extern system_status_t Ev3Proto_BeginLs(channel_t *chan, const char *name, uint16_t thisRead, uint32_t *pLength, file_handle_t *pHnd, uint8_t *outBuffer, int outMaxLen, int *realOutLen);
+extern system_status_t Ev3Proto_ContinueLs(channel_t *chan, file_handle_t hnd, uint16_t thisRead, uint8_t *outBuffer, int outMaxLen, int *realOutLen);
+
 extern system_status_t Ev3Proto_Close(channel_t *chan, file_handle_t hnd);
 extern system_status_t Ev3Proto_Mkdir(char *name);
 extern system_status_t Ev3Proto_Unlink(char *name);
