@@ -37,10 +37,13 @@ extern system_status_t Ev3Proto_BeginRx(channel_t *chan, uint32_t length, char *
 extern system_status_t Ev3Proto_ContinueRx(channel_t *chan, uint8_t *data, uint32_t len, file_handle_t hnd);
 
 extern system_status_t Ev3Proto_BeginTx(channel_t *chan, const char *name, uint16_t thisRead, uint32_t *pLength, file_handle_t *pHnd, uint8_t *outBuffer, int outMaxLen, int *realOutLen);
-extern system_status_t Ev3Proto_ContinueTx(channel_t *chan, file_handle_t hnd, uint16_t thisRead, uint32_t *pLength, uint8_t *outBuffer, int outMaxLen, int *realOutLen);
+extern system_status_t Ev3Proto_ContinueTx(channel_t *chan, file_handle_t hnd, uint16_t thisRead, uint32_t *pLength, uint8_t *outBuffer, int outMaxLen, int *realOutLen, bool closeOnEof);
 
 extern system_status_t Ev3Proto_BeginLs(channel_t *chan, const char *name, uint16_t thisRead, uint32_t *pLength, file_handle_t *pHnd, uint8_t *outBuffer, int outMaxLen, int *realOutLen);
-extern system_status_t Ev3Proto_ContinueLs(channel_t *chan, file_handle_t hnd, uint16_t thisRead, uint8_t *outBuffer, int outMaxLen, int *realOutLen);
+extern bool Ev3Proto_FillLs(const char *path, FILE *fp);
+extern bool Ev3Proto_LsFile(const char *entry, const char *fullPath, FILE *fp);
+extern bool Ev3Proto_LsDir(const char *entry, FILE *fp);
+extern bool Ev3Proto_LsOther(const char *entry, FILE *fp);
 
 extern system_status_t Ev3Proto_Close(channel_t *chan, file_handle_t hnd);
 extern system_status_t Ev3Proto_Mkdir(char *name);

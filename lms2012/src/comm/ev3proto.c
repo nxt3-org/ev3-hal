@@ -5,6 +5,9 @@
 #include <bits/errno.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <comm/md5.h>
 #include "comm/ev3proto.h"
 #include "comm/ev3proto.private.h"
 
@@ -17,7 +20,6 @@ bool Ev3Proto_Init(channel_t *chan, remotebuf_t rx, remotebuf_t tx, int bufferCa
     for (int i = 0; i < MAX_PROTO_HANDLES; i++) {
         chan->handles[i].mode       = HANDLE_CLOSED;
         chan->handles[i].fd         = -1;
-        chan->handles[i].dirfd      = NULL;
         chan->handles[i].fileLength = 0;
         chan->handles[i].sentLength = 0;
     }
@@ -140,13 +142,9 @@ bool Ev3Proto_SystemCommand(channel_t *chan) {
 
         uint32_t fileLen = 0;
         int      realOut = 0;
-        if (inCmd == SYSCMD_CONTINUE_LS)
-            status = Ev3Proto_ContinueLs(chan, hnd, thisRead,
-                                         &resultBuf[1], chan->bufCapacity - 8, &realOut);
-        else
-            status = Ev3Proto_ContinueTx(chan, hnd, thisRead, &fileLen,
-                                         &resultBuf[1], chan->bufCapacity - 8, &realOut);
-        success    = status == SYSSTATE_SUCCESS || status == SYSSTATE_EOF;
+        status  = Ev3Proto_ContinueTx(chan, hnd, thisRead, &fileLen,
+                                      &resultBuf[1], chan->bufCapacity - 8, &realOut, true);
+        success = status == SYSSTATE_SUCCESS || status == SYSSTATE_EOF;
         resultBuf[0] = hnd;
         resultLen = 1 + realOut;
         break;
@@ -160,7 +158,7 @@ bool Ev3Proto_SystemCommand(channel_t *chan) {
         uint32_t fileLen = 0;
         int      realOut = 0;
         status  = Ev3Proto_ContinueTx(chan, hnd, thisRead, &fileLen,
-                                      &resultBuf[5], chan->bufCapacity - 12, &realOut);
+                                      &resultBuf[5], chan->bufCapacity - 12, &realOut, true);
         success = status == SYSSTATE_SUCCESS || status == SYSSTATE_EOF;
         resultBuf[0] = (fileLen >> 0) & 0xFF;
         resultBuf[1] = (fileLen >> 8) & 0xFF;
@@ -304,14 +302,15 @@ system_status_t Ev3Proto_BeginTx(channel_t *chan,
     pH->fileLength = 0;
     pH->sentLength = 0;
 
-    return Ev3Proto_ContinueTx(chan, *pHnd, thisRead, pLength, outBuffer, outMaxLen, realOutLen);
+    return Ev3Proto_ContinueTx(chan, *pHnd, thisRead, pLength, outBuffer, outMaxLen, realOutLen, true);
 }
 
 system_status_t Ev3Proto_ContinueTx(channel_t *chan,
                                     file_handle_t hnd, uint16_t thisRead,
                                     uint32_t *pLength,
-                                    uint8_t *outBuffer, int outMaxLen, int *realOutLen) {
-    if (thisRead > outMaxLen) return SYSSTATE_BAD_SIZE;
+                                    uint8_t *outBuffer, int outMaxLen, int *realOutLen,
+                                    bool closeOnEof) {
+    if (thisRead > outMaxLen) thisRead = outMaxLen;
 
     ev3_handle_t *pH = Ev3Proto_GetHandle(chan, hnd, HANDLE_TX);
     if (pH == NULL) return SYSSTATE_UNKNOWN_HANDLE;
@@ -350,10 +349,12 @@ system_status_t Ev3Proto_ContinueTx(channel_t *chan,
 
     // finalize
     if (pH->sentLength == pH->fileLength) {
-        fsync(pH->fd);
-        close(pH->fd);
-        pH->fd   = -1;
-        pH->mode = HANDLE_CLOSED;
+        if (closeOnEof) {
+            fsync(pH->fd);
+            close(pH->fd);
+            pH->fd   = -1;
+            pH->mode = HANDLE_CLOSED;
+        }
         return SYSSTATE_EOF;
     } else {
         return SYSSTATE_SUCCESS;
@@ -364,13 +365,115 @@ system_status_t
 Ev3Proto_BeginLs(channel_t *chan, const char *name, uint16_t thisRead,
                  uint32_t *pLength, file_handle_t *pHnd,
                  uint8_t *outBuffer, int outMaxLen, int *realOutLen) {
-    return SYSSTATE_UNKNOWN_ERROR;
+    int  fd         = -1;
+    FILE *fp        = NULL;
+    char filename[] = "/tmp/nxt3-ls.XXXXXX";
+
+    *pHnd = Ev3Proto_FindFreeHandle(chan);
+    if (*pHnd == NO_PROTO_HANDLES) return SYSSTATE_OUT_OF_HANDLES;
+
+    fd = mkstemp(filename);
+    if (fd < 0) return Ev3Proto_Errno();
+    if (unlink(filename) < 0) goto fail;
+
+    fp = fdopen(dup(fd), "w+");
+    if (fp == NULL) goto fail;
+    if (!Ev3Proto_FillLs(name, fp)) goto fail;
+    fclose(fp);
+    if (lseek(fd, 0, SEEK_SET) < 0) goto fail;
+
+    ev3_handle_t *pH = &chan->handles[*pHnd];
+    pH->mode       = HANDLE_TX;
+    pH->fd         = fd;
+    pH->fileLength = 0;
+    pH->sentLength = 0;
+
+    return Ev3Proto_ContinueTx(chan, *pHnd, thisRead, pLength, outBuffer, outMaxLen, realOutLen, false);
+fail:
+    if (fp) fclose(fp);
+    if (fd >= 0) close(fd);
+    return Ev3Proto_Errno();
 }
 
-system_status_t
-Ev3Proto_ContinueLs(channel_t *chan, file_handle_t hnd, uint16_t thisRead,
-                    uint8_t *outBuffer, int outMaxLen, int *realOutLen) {
-    return SYSSTATE_UNKNOWN_ERROR;
+bool Ev3Proto_FillLs(const char *path, FILE *fp) {
+    DIR *dir = opendir(path);
+    if (!dir) goto fail;
+
+    int error;
+    errno = 0;
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != NULL) {
+        char *fullPath;
+        int  ch = asprintf(&fullPath, "%s/%s", path, entry->d_name);
+        if (ch < 0) goto fail;
+
+        // success/failure of one entry is not interesting - better list other files
+        if (entry->d_type == DT_REG) {
+            Ev3Proto_LsFile(entry->d_name, fullPath, fp);
+        } else if (entry->d_type == DT_LNK || entry->d_type == DT_DIR) {
+            Ev3Proto_LsDir(entry->d_name, fp);
+        } else {
+            Ev3Proto_LsOther(entry->d_name, fp);
+        }
+        free(fullPath);
+        errno   = 0;
+    }
+    if (errno != 0) goto fail;
+    closedir(dir);
+    dir = NULL;
+    return true;
+
+fail:
+    error = errno;
+    if (dir) closedir(dir);
+    errno    = error;
+    return false;
+}
+
+bool Ev3Proto_LsFile(const char *entry, const char *fullPath, FILE *fp) {
+    uint8_t md5buf[16];
+    uint8_t buffer[1024];
+    MD5_CTX md5ctx;
+    memset(md5buf, 0, 16);
+
+    // proc has magical regular files that block when read
+    if (strncmp(fullPath, "/proc", 5) != 0) {
+        MD5_Init(&md5ctx);
+
+        FILE *inp = fopen(fullPath, "r");
+        if (!inp) return false;
+        while (true) {
+            int count = fread(buffer, 1, 1024, inp);
+            MD5_Update(&md5ctx, buffer, count);
+            if (count < 1024) break;
+        }
+        bool fail = ferror(inp);
+        fclose(inp);
+        if (fail) return false;
+        MD5_Final(md5buf, &md5ctx);
+    }
+
+    struct stat info;
+    if (stat(fullPath, &info) < 0) return false;
+
+    fprintf(fp, "%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX"
+                "%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX"
+                " %08llX %s\n",
+            md5buf[0], md5buf[1], md5buf[2], md5buf[3], md5buf[4], md5buf[5], md5buf[6], md5buf[7],
+            md5buf[8], md5buf[9], md5buf[10], md5buf[11], md5buf[12], md5buf[13], md5buf[14], md5buf[15],
+            info.st_size, entry);
+    return true;
+}
+
+bool Ev3Proto_LsDir(const char *entry, FILE *fp) {
+    fprintf(fp, "%s/\n", entry);
+    return true;
+}
+
+bool Ev3Proto_LsOther(const char *entry, FILE *fp) {
+    fprintf(fp, "00000000000000000000000000000000 00000000 %s\n", entry);
+    return true;
 }
 
 system_status_t Ev3Proto_Close(channel_t *chan, file_handle_t hnd) {
@@ -383,11 +486,8 @@ system_status_t Ev3Proto_Close(channel_t *chan, file_handle_t hnd) {
         close(pH->fd);
         pH->fd = -1;
     }
-    if (pH->dirfd) {
-        closedir(pH->dirfd);
-        pH->dirfd = NULL;
-    }
-    pH->mode         = HANDLE_CLOSED;
+
+    pH->mode = HANDLE_CLOSED;
     return SYSSTATE_SUCCESS;
 }
 

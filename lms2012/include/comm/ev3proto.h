@@ -33,7 +33,6 @@ typedef enum {
 typedef struct {
     handle_mode_t mode;
     int           fd;
-    DIR           *dirfd;
     uint32_t      fileLength;
     uint32_t      sentLength;
 } ev3_handle_t;
