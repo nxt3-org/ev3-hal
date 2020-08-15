@@ -38,7 +38,7 @@ void Hal_Fs_ParseQuery(const char *query, search_query_t *pResult) {
     strncpy(pResult->content, query, FS_NAME_MAX_CHARS);
 }
 
-error_t Hal_Fs_CheckQuery(const char *test, search_query_t *pQuery) {
+fserr_t Hal_Fs_CheckQuery(const char *test, search_query_t *pQuery) {
     bool found;
 
     if (!Hal_Fs_CheckForbiddenFilename(test)) {

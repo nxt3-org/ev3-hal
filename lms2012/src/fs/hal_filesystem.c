@@ -103,7 +103,7 @@ errhnd_t Hal_Fs_CreateWrite(const char *name, uint32_t length) {
         return FS_HND(existing) | UNDEFINEDERROR;
 
     handle_t handle = FS_HND(existing);
-    error_t  err    = posixFsCreateWrite(&Mod_Fs.handles[handle], name, length);
+    fserr_t  err    = posixFsCreateWrite(&Mod_Fs.handles[handle], name, length);
     if (err == SUCCESS) {
         Mod_Fs.handles[handle].mode = OPENMODE_WRITE;
         return handle;
@@ -112,8 +112,8 @@ errhnd_t Hal_Fs_CreateWrite(const char *name, uint32_t length) {
     }
 }
 
-error_t Hal_Fs_OpenRead(handle_t handle) {
-    error_t err = checkConditions_OpenFn(handle);
+fserr_t Hal_Fs_OpenRead(handle_t handle) {
+    fserr_t err = checkConditions_OpenFn(handle);
     if (FS_ISERR(err))
         return err;
 
@@ -129,8 +129,8 @@ error_t Hal_Fs_OpenRead(handle_t handle) {
     }
 }
 
-error_t Hal_Fs_OpenAppend(handle_t handle) {
-    error_t err = checkConditions_OpenFn(handle);
+fserr_t Hal_Fs_OpenAppend(handle_t handle) {
+    fserr_t err = checkConditions_OpenFn(handle);
     if (FS_ISERR(err))
         return err;
 
@@ -146,7 +146,7 @@ error_t Hal_Fs_OpenAppend(handle_t handle) {
     }
 }
 
-error_t Hal_Fs_Close(errhnd_t errHandle) {
+fserr_t Hal_Fs_Close(errhnd_t errHandle) {
     if (Mod_Fs.refCount <= 0)
         return UNDEFINEDERROR;
 
@@ -163,78 +163,78 @@ error_t Hal_Fs_Close(errhnd_t errHandle) {
     } else {
         bool saveMeta = pH->mode == OPENMODE_WRITE || pH->mode == OPENMODE_APPEND;
 
-        error_t result = posixFsClose(pH, saveMeta);
+        fserr_t result = posixFsClose(pH, saveMeta);
         pH->mode = OPENMODE_CLOSED;
         return result;
     }
 }
 
 
-error_t Hal_Fs_Read(handle_t handle, void *buffer, uint32_t *pLength) {
-    error_t err = checkConditions_Read(handle);
+fserr_t Hal_Fs_Read(handle_t handle, void *buffer, uint32_t *pLength) {
+    fserr_t err = checkConditions_Read(handle);
     if (FS_ISERR(err))
         return err;
 
     return posixFsRead(&Mod_Fs.handles[handle], buffer, pLength);
 }
 
-error_t Hal_Fs_Write(handle_t handle, const void *buffer, uint32_t *pLength) {
-    error_t err = checkConditions_Write(handle);
+fserr_t Hal_Fs_Write(handle_t handle, const void *buffer, uint32_t *pLength) {
+    fserr_t err = checkConditions_Write(handle);
     if (FS_ISERR(err))
         return err;
 
     return posixFsWrite(&Mod_Fs.handles[handle], buffer, pLength);
 }
 
-error_t Hal_Fs_Seek(handle_t handle, int32_t offset, seek_t mode) {
-    error_t err = checkConditions_Read(handle);
+fserr_t Hal_Fs_Seek(handle_t handle, int32_t offset, seek_t mode) {
+    fserr_t err = checkConditions_Read(handle);
     if (FS_ISERR(err))
         return err;
 
     return posixFsSeekRead(&Mod_Fs.handles[handle], offset, mode);
 }
 
-error_t Hal_Fs_Tell(handle_t handle, uint32_t *pFilePos) {
-    error_t err = checkConditions_Read(handle);
+fserr_t Hal_Fs_Tell(handle_t handle, uint32_t *pFilePos) {
+    fserr_t err = checkConditions_Read(handle);
     if (FS_ISERR(err))
         return err;
 
     return posixFsTellRead(&Mod_Fs.handles[handle], pFilePos);
 }
 
-error_t Hal_Fs_Truncate(handle_t handle) {
-    error_t err = checkConditions_Write(handle);
+fserr_t Hal_Fs_Truncate(handle_t handle) {
+    fserr_t err = checkConditions_Write(handle);
     if (FS_ISERR(err))
         return err;
 
     handle_data_t *pH = &Mod_Fs.handles[handle];
 
-    error_t code = posixFsShrink(pH);
+    fserr_t code = posixFsShrink(pH);
     pH->mode = OPENMODE_CLOSED;
     return code;
 }
 
-error_t Hal_Fs_Resize(handle_t handle, uint32_t newSize) {
-    error_t err = checkConditions_Write(handle);
+fserr_t Hal_Fs_Resize(handle_t handle, uint32_t newSize) {
+    fserr_t err = checkConditions_Write(handle);
     if (FS_ISERR(err))
         return err;
 
     handle_data_t *pH = &Mod_Fs.handles[handle];
 
-    error_t code = posixFsResize(pH, newSize);
+    fserr_t code = posixFsResize(pH, newSize);
     pH->mode = OPENMODE_CLOSED;
     return code;
 }
 
 
-error_t Hal_Fs_MapFile(handle_t handle, const uint8_t **mapped, uint32_t *pLength) {
+fserr_t Hal_Fs_MapFile(handle_t handle, const uint8_t **mapped, uint32_t *pLength) {
     if (Mod_Fs.refCount <= 0)
         return UNDEFINEDERROR;
     if (handle >= MAX_HANDLES)
         return ILLEGALHANDLE;
 
     handle_data_t *pH = &Mod_Fs.handles[handle];
-    error_t       err;
+    fserr_t       err;
 
     if (pH->mode != OPENMODE_READ) {
         err = Hal_Fs_OpenRead(handle);
@@ -255,8 +255,8 @@ error_t Hal_Fs_MapFile(handle_t handle, const uint8_t **mapped, uint32_t *pLengt
 }
 
 
-error_t Hal_Fs_RenameFile(handle_t handle, const char *newName) {
-    error_t err = checkConditions_AnyOpen(handle);
+fserr_t Hal_Fs_RenameFile(handle_t handle, const char *newName) {
+    fserr_t err = checkConditions_AnyOpen(handle);
     if (FS_ISERR(err))
         return err;
 
@@ -266,19 +266,19 @@ error_t Hal_Fs_RenameFile(handle_t handle, const char *newName) {
     return posixFsMove(&Mod_Fs.handles[handle], newName);
 }
 
-error_t Hal_Fs_DeleteFile(handle_t handle) {
-    error_t err = checkConditions_AnyOpen(handle);
+fserr_t Hal_Fs_DeleteFile(handle_t handle) {
+    fserr_t err = checkConditions_AnyOpen(handle);
     if (FS_ISERR(err))
         return err;
 
     handle_data_t *pH = &Mod_Fs.handles[handle];
 
-    error_t result = posixFsRemove(pH);
+    fserr_t result = posixFsRemove(pH);
     pH->mode = OPENMODE_CLOSED;
     return result;
 }
 
-error_t Hal_Fs_DeleteAll(void) {
+fserr_t Hal_Fs_DeleteAll(void) {
     for (handle_t hnd = 0; hnd < MAX_HANDLES; hnd++) {
         Hal_Fs_Close(hnd);
     }
@@ -292,7 +292,7 @@ error_t Hal_Fs_DeleteAll(void) {
     return SUCCESS;
 }
 
-error_t Hal_Fs_GetFreeStorage(uint32_t *pBytes) {
+fserr_t Hal_Fs_GetFreeStorage(uint32_t *pBytes) {
     if (Mod_Fs.refCount <= 0)
         return UNDEFINEDERROR;
 
@@ -300,7 +300,7 @@ error_t Hal_Fs_GetFreeStorage(uint32_t *pBytes) {
 }
 
 
-error_t Hal_Fs_CheckHandleIsExclusive(handle_t handle, bool searchToo) {
+fserr_t Hal_Fs_CheckHandleIsExclusive(handle_t handle, bool searchToo) {
     if (Mod_Fs.refCount <= 0)
         return UNDEFINEDERROR;
     if (handle >= MAX_HANDLES)
@@ -353,7 +353,7 @@ errhnd_t Hal_Fs_LocateNext(handle_t handle, char *name, uint32_t *pLength) {
         return handle | ILLEGALHANDLE;
 
     handle_data_t *pH = &Mod_Fs.handles[handle];
-    error_t       err;
+    fserr_t       err;
 
     if (pH->mode != OPENMODE_REFERENCE)
         return handle | ILLEGALHANDLE;
@@ -386,7 +386,7 @@ errhnd_t Hal_Fs_LocateNext(handle_t handle, char *name, uint32_t *pLength) {
     return result;
 }
 
-error_t Hal_Fs_GetMeta(handle_t handle, file_meta_t *pMeta) {
+fserr_t Hal_Fs_GetMeta(handle_t handle, file_meta_t *pMeta) {
     if (Mod_Fs.refCount <= 0)
         return UNDEFINEDERROR;
     if (handle >= MAX_HANDLES)
@@ -427,7 +427,7 @@ error_t Hal_Fs_GetMeta(handle_t handle, file_meta_t *pMeta) {
     }
 }
 
-error_t checkConditions_Read(handle_t hnd) {
+fserr_t checkConditions_Read(handle_t hnd) {
     if (Mod_Fs.refCount <= 0)
         return UNDEFINEDERROR;
     if (hnd >= MAX_HANDLES)
@@ -437,7 +437,7 @@ error_t checkConditions_Read(handle_t hnd) {
     return SUCCESS;
 }
 
-error_t checkConditions_Write(handle_t hnd) {
+fserr_t checkConditions_Write(handle_t hnd) {
     if (Mod_Fs.refCount <= 0)
         return UNDEFINEDERROR;
     if (hnd >= MAX_HANDLES)
@@ -447,7 +447,7 @@ error_t checkConditions_Write(handle_t hnd) {
     return SUCCESS;
 }
 
-error_t checkConditions_AnyOpen(handle_t hnd) {
+fserr_t checkConditions_AnyOpen(handle_t hnd) {
     if (Mod_Fs.refCount <= 0)
         return UNDEFINEDERROR;
     if (hnd >= MAX_HANDLES)
@@ -459,7 +459,7 @@ error_t checkConditions_AnyOpen(handle_t hnd) {
     return SUCCESS;
 }
 
-error_t checkConditions_OpenFn(handle_t hnd) {
+fserr_t checkConditions_OpenFn(handle_t hnd) {
     if (Mod_Fs.refCount <= 0)
         return UNDEFINEDERROR;
     if (hnd >= MAX_HANDLES)
@@ -470,7 +470,7 @@ error_t checkConditions_OpenFn(handle_t hnd) {
         return FILEISBUSY;
     if (!Mod_Fs.handles[hnd].isReal)
         return FILENOTFOUND;
-    error_t err = Hal_Fs_CheckHandleIsExclusive(hnd, false);
+    fserr_t err = Hal_Fs_CheckHandleIsExclusive(hnd, false);
     if (err != SUCCESS)
         return err;
     return SUCCESS;

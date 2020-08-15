@@ -31,9 +31,9 @@ extern mod_fs_t Mod_Fs;
 
 extern errhnd_t allocateHandle(openmode_t newMode);
 
-extern error_t checkConditions_Read(handle_t hnd);
-extern error_t checkConditions_Write(handle_t hnd);
-extern error_t checkConditions_AnyOpen(handle_t hnd);
-extern error_t checkConditions_OpenFn(handle_t hnd);
+extern fserr_t checkConditions_Read(handle_t hnd);
+extern fserr_t checkConditions_Write(handle_t hnd);
+extern fserr_t checkConditions_AnyOpen(handle_t hnd);
+extern fserr_t checkConditions_OpenFn(handle_t hnd);
 
 #endif //HAL_FILESYSTEM_PRIVATE

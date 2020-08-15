@@ -59,33 +59,33 @@ extern bool      Hal_Fs_RefAdd(void);
 extern bool      Hal_Fs_RefDel(void);
 
 extern errhnd_t  Hal_Fs_CreateWrite(const char *name, uint32_t length);
-extern error_t   Hal_Fs_OpenRead(handle_t handle);
-extern error_t   Hal_Fs_OpenAppend(handle_t handle);
-extern error_t   Hal_Fs_Close(errhnd_t errHandle);
+extern fserr_t   Hal_Fs_OpenRead(handle_t handle);
+extern fserr_t   Hal_Fs_OpenAppend(handle_t handle);
+extern fserr_t   Hal_Fs_Close(errhnd_t errHandle);
 
-extern error_t   Hal_Fs_Read(handle_t handle, void *buffer, uint32_t *pLength);
-extern error_t   Hal_Fs_Write(handle_t handle, const void *buffer, uint32_t *pLength);
-extern error_t   Hal_Fs_Seek(handle_t handle, int32_t offset, seek_t mode);
-extern error_t   Hal_Fs_Tell(handle_t handle, uint32_t *pFilePos);
-extern error_t   Hal_Fs_Truncate(handle_t handle);
-extern error_t   Hal_Fs_Resize(handle_t handle, uint32_t newSize);
+extern fserr_t   Hal_Fs_Read(handle_t handle, void *buffer, uint32_t *pLength);
+extern fserr_t   Hal_Fs_Write(handle_t handle, const void *buffer, uint32_t *pLength);
+extern fserr_t   Hal_Fs_Seek(handle_t handle, int32_t offset, seek_t mode);
+extern fserr_t   Hal_Fs_Tell(handle_t handle, uint32_t *pFilePos);
+extern fserr_t   Hal_Fs_Truncate(handle_t handle);
+extern fserr_t   Hal_Fs_Resize(handle_t handle, uint32_t newSize);
 
-extern error_t   Hal_Fs_MapFile(handle_t handle, const uint8_t **mapped, uint32_t *pLength);
+extern fserr_t   Hal_Fs_MapFile(handle_t handle, const uint8_t **mapped, uint32_t *pLength);
 
-extern error_t   Hal_Fs_RenameFile(handle_t handle, const char *newName);
-extern error_t   Hal_Fs_DeleteFile(handle_t handle);
-extern error_t   Hal_Fs_DeleteAll(void);
-extern error_t   Hal_Fs_GetFreeStorage(uint32_t *pBytes);
+extern fserr_t   Hal_Fs_RenameFile(handle_t handle, const char *newName);
+extern fserr_t   Hal_Fs_DeleteFile(handle_t handle);
+extern fserr_t   Hal_Fs_DeleteAll(void);
+extern fserr_t   Hal_Fs_GetFreeStorage(uint32_t *pBytes);
 
-extern error_t   Hal_Fs_CheckHandleIsExclusive(handle_t handle, bool searchToo);
+extern fserr_t   Hal_Fs_CheckHandleIsExclusive(handle_t handle, bool searchToo);
 
 extern void      Hal_Fs_ParseQuery(const char *query, search_query_t *pResult);
-extern error_t   Hal_Fs_CheckQuery(const char *test, search_query_t *pQuery);
+extern fserr_t   Hal_Fs_CheckQuery(const char *test, search_query_t *pQuery);
 
 extern errhnd_t  Hal_Fs_Locate(const char *query, char *name, uint32_t *pLength);
 extern errhnd_t  Hal_Fs_Locate2(search_query_t *pQuery, char *name, uint32_t *pLength);
 extern errhnd_t  Hal_Fs_LocateNext(handle_t handle, char *name, uint32_t *pLength);
-extern error_t   Hal_Fs_GetMeta(handle_t handle, file_meta_t *pMeta);
+extern fserr_t   Hal_Fs_GetMeta(handle_t handle, file_meta_t *pMeta);
 extern bool      Hal_Fs_CheckForbiddenFilename(const char *name);
 
 

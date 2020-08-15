@@ -37,7 +37,7 @@ typedef enum __attribute__((packed)) {
     FILETX_STREAMERROR  = 0x9A00,
     FILETX_CLOSEERROR   = 0x9B00,
     INVALIDSEEK         = 0x9C00
-} error_t;
+} fserr_t;
 
 typedef uint16_t errhnd_t;
 typedef uint8_t  handle_t;

@@ -17,7 +17,7 @@ typedef struct {
 
 #define FILE_META_VERSION_2 0x00000002
 
-extern error_t mapErrno(int error);
-extern error_t reportErrno(const char *message);
+extern fserr_t mapErrno(int error);
+extern fserr_t reportErrno(const char *message);
 
 #endif //POSIX_FS_PRIVATE

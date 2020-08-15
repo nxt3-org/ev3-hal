@@ -67,7 +67,7 @@ void posixFsExit(void) {
     }
 }
 
-error_t posixFsLoadMeta(handle_data_t *pH) {
+fserr_t posixFsLoadMeta(handle_data_t *pH) {
     FILE_META_V2 block  = {0, 0, 0};
     struct stat  stData = {0};
     int          fd;
@@ -120,7 +120,7 @@ skip:
     return SUCCESS;
 }
 
-error_t posixFsSaveMeta(handle_data_t *pH) {
+fserr_t posixFsSaveMeta(handle_data_t *pH) {
     if (!pH->isReal)
         return ILLEGALFILENAME;
 
@@ -130,7 +130,7 @@ error_t posixFsSaveMeta(handle_data_t *pH) {
         .FullSize = pH->fullLength,
     };
 
-    error_t result = SUCCESS;
+    fserr_t result = SUCCESS;
 
     int fd = openat(Mod_Fs.metaDirFd, pH->name, O_CREAT | O_TRUNC | O_WRONLY, 00644);
     if (fd < 0)
@@ -148,7 +148,7 @@ error_t posixFsSaveMeta(handle_data_t *pH) {
     return result;
 }
 
-extern error_t posixFsCreateWrite(handle_data_t *pH, const char *name, uint32_t fileSize) {
+extern fserr_t posixFsCreateWrite(handle_data_t *pH, const char *name, uint32_t fileSize) {
     strncpy(pH->name, name, FS_NAME_MAX_CHARS);
     pH->fullLength   = fileSize;
     pH->readPointer  = 0;
@@ -160,7 +160,7 @@ extern error_t posixFsCreateWrite(handle_data_t *pH, const char *name, uint32_t 
         return reportErrno("EV3 FS: cannot create file");
 
     if (ftruncate(fd, fileSize) < 0) {
-        error_t err = reportErrno("EV3 FS: cannot set file size");
+        fserr_t err = reportErrno("EV3 FS: cannot set file size");
         close(fd);
         return err;
     }
@@ -170,7 +170,7 @@ extern error_t posixFsCreateWrite(handle_data_t *pH, const char *name, uint32_t 
     return SUCCESS;
 }
 
-error_t posixFsOpenRead(handle_data_t *pH) {
+fserr_t posixFsOpenRead(handle_data_t *pH) {
     pH->linuxFd = openat(Mod_Fs.dataDirFd, pH->name, O_RDONLY | O_CLOEXEC);
     if (pH->linuxFd < 0)
         return reportErrno("EV3 FS: cannot open file for reading");
@@ -178,7 +178,7 @@ error_t posixFsOpenRead(handle_data_t *pH) {
     return SUCCESS;
 }
 
-error_t posixFsOpenAppend(handle_data_t *pH) {
+fserr_t posixFsOpenAppend(handle_data_t *pH) {
     if (pH->writePointer >= pH->fullLength)
         return FILEISFULL;
 
@@ -189,7 +189,7 @@ error_t posixFsOpenAppend(handle_data_t *pH) {
     return SUCCESS;
 }
 
-extern error_t posixFsReadAll(handle_data_t *pH) {
+extern fserr_t posixFsReadAll(handle_data_t *pH) {
     if (pH->linuxFd < 0 || !pH->isReal)
         return ILLEGALHANDLE;
 
@@ -201,7 +201,7 @@ extern error_t posixFsReadAll(handle_data_t *pH) {
     if (!pH->memCopy)
         return reportErrno("EV3 FS: cannot allocate memory for file copy");
 
-    error_t err;
+    fserr_t err;
     size_t  read = 0;
     for (;;) {
         ssize_t now = pread(pH->linuxFd, pH->memCopy + read, pH->fullLength - read, read);
@@ -233,7 +233,7 @@ error_cleanup:
     return err;
 }
 
-error_t posixFsRead(handle_data_t *pH, void *buffer, uint32_t *pLength) {
+fserr_t posixFsRead(handle_data_t *pH, void *buffer, uint32_t *pLength) {
     if (pH->linuxFd < 0 || !pH->isReal)
         return ILLEGALHANDLE;
 
@@ -279,7 +279,7 @@ error_t posixFsRead(handle_data_t *pH, void *buffer, uint32_t *pLength) {
     return fulfill < request ? ENDOFFILE : SUCCESS;
 }
 
-error_t posixFsWrite(handle_data_t *pH, const void *buffer, uint32_t *pLength) {
+fserr_t posixFsWrite(handle_data_t *pH, const void *buffer, uint32_t *pLength) {
     if (pH->linuxFd < 0 || !pH->isReal)
         return ILLEGALHANDLE;
 
@@ -319,7 +319,7 @@ error_t posixFsWrite(handle_data_t *pH, const void *buffer, uint32_t *pLength) {
     return fulfill < request ? EOFEXSPECTED : SUCCESS;
 }
 
-error_t posixFsSeekRead(handle_data_t *pH, int32_t offset, seek_t mode) {
+fserr_t posixFsSeekRead(handle_data_t *pH, int32_t offset, seek_t mode) {
     if (pH->linuxFd < 0 || !pH->isReal)
         return ILLEGALHANDLE;
 
@@ -343,7 +343,7 @@ error_t posixFsSeekRead(handle_data_t *pH, int32_t offset, seek_t mode) {
     return SUCCESS;
 }
 
-error_t posixFsTellRead(handle_data_t *pH, uint32_t *filePosition) {
+fserr_t posixFsTellRead(handle_data_t *pH, uint32_t *filePosition) {
     if (pH->linuxFd < 0 || !pH->isReal)
         return ILLEGALHANDLE;
 
@@ -351,11 +351,11 @@ error_t posixFsTellRead(handle_data_t *pH, uint32_t *filePosition) {
     return SUCCESS;
 }
 
-error_t posixFsRemove(handle_data_t *pH) {
+fserr_t posixFsRemove(handle_data_t *pH) {
     if (!pH->isReal)
         return ILLEGALHANDLE;
 
-    error_t err;
+    fserr_t err;
     if (pH->linuxFd >= 0) {
         err = posixFsClose(pH, false);
         if (FS_ISERR(err))
@@ -375,7 +375,7 @@ error_t posixFsRemove(handle_data_t *pH) {
     return SUCCESS;
 }
 
-error_t posixFsMove(handle_data_t *pH, const char *name) {
+fserr_t posixFsMove(handle_data_t *pH, const char *name) {
     if (!pH->isReal)
         return ILLEGALHANDLE;
 
@@ -396,11 +396,11 @@ error_t posixFsMove(handle_data_t *pH, const char *name) {
     return SUCCESS;
 }
 
-error_t posixFsShrink(handle_data_t *pH) {
+fserr_t posixFsShrink(handle_data_t *pH) {
     return posixFsResize(pH, pH->writePointer);
 }
 
-error_t posixFsResize(handle_data_t *pH, uint32_t newLength) {
+fserr_t posixFsResize(handle_data_t *pH, uint32_t newLength) {
     if (pH->linuxFd < 0 || !pH->isReal)
         return ILLEGALHANDLE;
 
@@ -413,7 +413,7 @@ error_t posixFsResize(handle_data_t *pH, uint32_t newLength) {
     return posixFsClose(pH, true);
 }
 
-error_t posixFsClose(handle_data_t *pH, bool saveMeta) {
+fserr_t posixFsClose(handle_data_t *pH, bool saveMeta) {
     if (pH->linuxFd >= 0) {
         if (fsync(pH->linuxFd) < 0)
             reportErrno("EV3 FS: cannot flush data");
@@ -431,14 +431,14 @@ error_t posixFsClose(handle_data_t *pH, bool saveMeta) {
         posixFsFinishBrowse(&pH->queryDir);
     }
 
-    error_t result = saveMeta ? posixFsSaveMeta(pH) : SUCCESS;
+    fserr_t result = saveMeta ? posixFsSaveMeta(pH) : SUCCESS;
     pH->fullLength   = 0;
     pH->writePointer = 0;
     pH->readPointer  = 0;
     return result;
 }
 
-error_t posixFsStartBrowse(DIR **pStream) {
+fserr_t posixFsStartBrowse(DIR **pStream) {
     *pStream = NULL;
 
     DIR *stream = opendir(Mod_Fs.dataDir);
@@ -449,7 +449,7 @@ error_t posixFsStartBrowse(DIR **pStream) {
     return SUCCESS;
 }
 
-error_t posixFsBrowseNext(DIR *stream, struct dirent **ppDirent) {
+fserr_t posixFsBrowseNext(DIR *stream, struct dirent **ppDirent) {
     errno = 0;
     *ppDirent = readdir(stream);
     if (*ppDirent == NULL) {
@@ -470,7 +470,7 @@ void posixFsFinishBrowse(DIR **pStream) {
     *pStream = NULL;
 }
 
-error_t posixFsGetFreeBytes(uint32_t *pAmount) {
+fserr_t posixFsGetFreeBytes(uint32_t *pAmount) {
     struct statvfs info;
 
     int err = fstatvfs(Mod_Fs.dataDirFd, &info);
@@ -484,7 +484,7 @@ error_t posixFsGetFreeBytes(uint32_t *pAmount) {
     }
 }
 
-error_t mapErrno(int error) {
+fserr_t mapErrno(int error) {
     switch (error) {
     case 0:
         return SUCCESS;
@@ -503,7 +503,7 @@ error_t mapErrno(int error) {
     }
 }
 
-error_t reportErrno(const char *message) {
+fserr_t reportErrno(const char *message) {
     int error = errno;
     perror(message);
     errno     = error;
