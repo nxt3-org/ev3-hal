@@ -184,6 +184,8 @@ extern bool Hal_Pnp_IsReady(int inputPort) {
     case READY_SIGNALLED_NO:
         return false; // explicit disapproval
     }
+
+    return false;
 }
 
 extern void Hal_Pnp_SetType(int port, bool output, hal_nxt_type_t mode) {

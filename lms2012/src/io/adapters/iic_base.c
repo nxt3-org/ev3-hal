@@ -1,7 +1,7 @@
 #include "io/adapters/iic_base.h"
 
 uint8_t lego_iic_read(lego_iic_mem_t *self, uint8_t reg) {
-    if (reg >= 0x00 && reg < 0x40) {
+    if (reg < 0x40) {
         if (reg < sizeof(lego_iic_hdr_t)) {
             return ((const uint8_t *) self->header)[reg];
         } else {

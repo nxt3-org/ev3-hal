@@ -56,6 +56,7 @@ bool action_handle(uint16_t new) {
         action_resume_program();
         return true;
     }
+    return true;
 }
 
 void action_kill_brick(void) {
