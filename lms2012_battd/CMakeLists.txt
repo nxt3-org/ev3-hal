@@ -37,7 +37,10 @@ target_include_directories(battd.elf
                 ${CMAKE_CURRENT_SOURCE_DIR}/screens
         )
 
-target_link_libraries(battd.elf PRIVATE -static)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
+target_link_libraries(battd.elf PRIVATE -static Threads::Threads m)
 
 set_target_properties(battd.elf PROPERTIES
         C_STANDARD 99
