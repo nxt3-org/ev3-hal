@@ -40,7 +40,7 @@ bool initPcm(uint16_t samplerate, uint8_t volume) {
     return writeCommand(&req, sizeof(req), true);
 }
 
-int writePCM(void *samples, size_t size) {
+int writePCM(void *samples, uint32_t size) {
     if (size > SOUNDBUFFERSIZE)
         size = SOUNDBUFFERSIZE;
 
