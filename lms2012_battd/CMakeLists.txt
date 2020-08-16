@@ -47,3 +47,10 @@ set_target_properties(battd.elf PROPERTIES
         C_STANDARD_REQUIRED YES
         C_EXTENSIONS YES
         )
+
+add_custom_command(TARGET battd.elf
+        POST_BUILD
+        COMMAND ${CMAKE_OBJCOPY} --only-keep-debug battd.elf battd.dbg
+        COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=battd.dbg battd.elf
+        COMMAND ${CMAKE_STRIP} --strip-all battd.elf
+        )
