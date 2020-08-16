@@ -35,6 +35,12 @@ add_library(nxthal STATIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/hal_pnp.c
         )
 
+set_target_properties(nxthal PROPERTIES
+        C_STANDARD 99
+        C_STANDARD_REQUIRED YES
+        C_EXTENSIONS NO
+        )
+
 target_include_directories(nxthal
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/
