@@ -4,6 +4,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <fifo.h>
+#include <string.h>
 
 #include "overtemp.xbm"
 #include "undervoltage.xbm"
