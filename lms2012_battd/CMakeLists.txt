@@ -40,7 +40,7 @@ target_include_directories(battd.elf
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
-target_link_libraries(battd.elf PRIVATE -static Threads::Threads m)
+target_link_libraries(battd.elf PRIVATE Threads::Threads -lm -lrt)
 
 set_target_properties(battd.elf PROPERTIES
         C_STANDARD 99
