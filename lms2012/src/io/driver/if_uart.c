@@ -125,7 +125,7 @@ static void Tick(void) {
             if (flags & (UART_FLAG_PNP_CHANGE | UART_FLAG_DATA_READY)) {
                 ProbeAndGo(port);
 
-            } else if (--Drv_Uart.timer[port] == 0) {
+            } else if (--Drv_Uart.timer[port] <= 0) {
                 GoOff(port);
             }
             break;
@@ -138,7 +138,7 @@ static void Tick(void) {
             } else if (flags & UART_FLAG_DATA_READY) {
                 GoWait(port);
 
-            } else if (--Drv_Uart.timer[port] == 0) {
+            } else if (--Drv_Uart.timer[port] <= 0) {
                 GoOff(port);
             }
             break;
@@ -148,7 +148,7 @@ static void Tick(void) {
             if (flags & UART_FLAG_PNP_CHANGE) {
                 GoReboot(port);
 
-            } else if (--Drv_Uart.timer[port] == 0) {
+            } else if (--Drv_Uart.timer[port] <= 0) {
                 Drv_Uart.state[port] = UART_READY;
                 DriverUart.Sensor.ResetDatalog(port);
                 if (Drv_Uart.booting[port]) {
@@ -228,6 +228,8 @@ static void GoSwitch(int port) {
 static void GoWait(int port) {
     Drv_Uart.state[port] = UART_WAITING_FOR_STABILITY;
     Drv_Uart.timer[port] = Drv_Uart.types[Drv_Uart.devmap.mode[port]]->Main.ModeswitchMsec;
+    if (Drv_Uart.timer[port] == 0)
+        Drv_Uart.timer[port] = 10;
 }
 
 static void GoOff(int port) {

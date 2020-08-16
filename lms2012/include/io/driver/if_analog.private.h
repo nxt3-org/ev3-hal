@@ -12,7 +12,8 @@ typedef enum {
 typedef struct {
     const typedb_entry_t *analog;
     analog_state_t       state;
-    int                  timer;
+    int32_t              timer;
+    bool booting;
 } analog_port_t;
 
 typedef struct {

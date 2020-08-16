@@ -34,7 +34,7 @@ typedef struct {
 typedef struct {
     int            refCount;
     typedb_entry_t types[4][MAX_MODES];
-    uint16_t       timer[4];
+    int16_t        timer[4];
     uart_state_t   state[4];
     device_map_t   devmap;
     uint16_t       datalogAge[4];

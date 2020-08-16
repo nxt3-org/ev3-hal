@@ -20,9 +20,10 @@ static bool RefAdd(void) {
     }
 
     for (int i = 0; i < 4; i++) {
-        Drv_Analog.ports[i].analog = NULL;
-        Drv_Analog.ports[i].state  = ANALOG_OFF;
-        Drv_Analog.ports[i].timer  = 0;
+        Drv_Analog.ports[i].analog  = NULL;
+        Drv_Analog.ports[i].state   = ANALOG_OFF;
+        Drv_Analog.ports[i].timer   = 0;
+        Drv_Analog.ports[i].booting = false;
     }
 
     Drv_Analog.refCount++;
@@ -68,10 +69,10 @@ static bool PnpStart(int port, dcm_link_t link, dcm_type_t type) {
         return false;
 
     Dcm_SetPins(port, analog->Main.PinSetup);
-    Drv_Analog.ports[port].analog = analog;
-    Drv_Analog.ports[port].timer  = analog->Main.ModeswitchMsec;
-    Drv_Analog.ports[port].state  = ANALOG_WAITING;
-    Hal_Pnp_HandshakeFinished(port, false, pnpDev);
+    Drv_Analog.ports[port].analog  = analog;
+    Drv_Analog.ports[port].timer   = analog->Main.ModeswitchMsec;
+    Drv_Analog.ports[port].state   = ANALOG_WAITING;
+    Drv_Analog.ports[port].booting = true;
     return true;
 }
 
@@ -81,6 +82,7 @@ static void PnpStop(int port) {
     Drv_Analog.ports[port].analog = NULL;
     Drv_Analog.ports[port].timer  = 0;
     Drv_Analog.ports[port].state  = ANALOG_OFF;
+    Drv_Analog.ports[port].booting = true;
     Dcm_SetPins(port, 'f');
 }
 
@@ -111,9 +113,13 @@ static void Tick(void) {
         if (port->state != ANALOG_WAITING)
             continue;
 
-        if (port->timer == 0) {
+        if (port->timer <= 0) {
             port->state = ANALOG_READY;
             DriverAnalog.Sensor.ResetDatalog(i);
+            if (port->booting) {
+                port->booting = false;
+                Hal_Pnp_HandshakeFinished(i, false, IdentifyDevice(port->analog->Main.Device));
+            }
         } else {
             port->timer--;
             port->state = ANALOG_WAITING;
@@ -145,7 +151,7 @@ static int GetModes(int port) {
     return Drv_Analog.ports[port].analog->Main.GuiVisibleModes;
 }
 
-static const char * GetModeName(int port, int mode) {
+static const char *GetModeName(int port, int mode) {
     if (!Present(port)) return NULL;
     if (mode >= 8) return NULL;
 

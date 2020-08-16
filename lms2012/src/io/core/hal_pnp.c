@@ -119,7 +119,8 @@ void Hal_Pnp_LinkLost(int port, bool output) {
         Adapter_Detach(Mod_Pnp.Ports[index].Adapter);
         Adapter_Destroy(Mod_Pnp.Ports[index].Adapter);
     }
-    Mod_Pnp.Ports[index].Interface->Stop(port);
+    if (Mod_Pnp.Ports[index].Interface)
+        Mod_Pnp.Ports[index].Interface->Stop(port);
 
     Mod_Pnp.Ports[index].Adapter            = NULL;
     Mod_Pnp.Ports[index].LastAdapterFactory = NULL;
