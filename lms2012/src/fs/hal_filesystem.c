@@ -27,16 +27,14 @@ bool Hal_Fs_RefAdd(void) {
         Mod_Fs.handles[hnd].isReal        = false;
     }
 
-    if (!posixFsGetDefaultDirs(&Mod_Fs.dataDir, &Mod_Fs.metaDir)) {
+    if (!posixFsGetDefaultDirs(&Mod_Fs.dataDir)) {
         return false;
     }
 
     bool initOK = posixFsInit();
     if (!initOK) {
         free((void *) Mod_Fs.dataDir);
-        free((void *) Mod_Fs.metaDir);
         Mod_Fs.dataDir = NULL;
-        Mod_Fs.metaDir = NULL;
         return false;
     }
 
@@ -53,9 +51,7 @@ bool Hal_Fs_RefDel(void) {
         }
         posixFsExit();
         free((void *) Mod_Fs.dataDir);
-        free((void *) Mod_Fs.metaDir);
         Mod_Fs.dataDir = NULL;
-        Mod_Fs.metaDir = NULL;
     }
     Mod_Fs.refCount--;
     return true;

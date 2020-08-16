@@ -21,9 +21,7 @@ typedef struct {
     int           refCount;
     handle_data_t handles[MAX_HANDLES];
     char          *dataDir;
-    char          *metaDir;
     int           dataDirFd;
-    int           metaDirFd;
 } mod_fs_t;
 
 extern mod_fs_t Mod_Fs;

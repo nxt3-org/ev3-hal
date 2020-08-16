@@ -23,16 +23,7 @@ bool posixFsInit(void) {
             return false;
         }
     } else {
-        fputs("EV3 FS: created data directory\n", stderr);
-    }
-
-    if (mkdir(Mod_Fs.metaDir, 00755) < 0) {
-        if (errno != EEXIST) {
-            reportErrno("EV3 FS: cannot create meta directory");
-            return false;
-        }
-    } else {
-        fputs("EV3 FS: created meta directory\n", stderr);
+        // fputs("EV3 FS: created data directory\n", stderr);
     }
 
     Mod_Fs.dataDirFd = open(Mod_Fs.dataDir, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
@@ -40,25 +31,10 @@ bool posixFsInit(void) {
         reportErrno("EV3 FS: cannot open data directory");
         return false;
     }
-
-    Mod_Fs.metaDirFd = open(Mod_Fs.metaDir, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
-    if (Mod_Fs.metaDirFd < 0) {
-        reportErrno("EV3 FS: cannot open meta directory");
-        close(Mod_Fs.dataDirFd);
-        Mod_Fs.dataDirFd = -1;
-        return false;
-    }
-
     return true;
 }
 
 void posixFsExit(void) {
-    if (Mod_Fs.metaDirFd >= 0) {
-        if (close(Mod_Fs.metaDirFd) < 0) {
-            reportErrno("EV3 FS: cannot close root meta directory");
-        }
-        Mod_Fs.metaDirFd = -1;
-    }
     if (Mod_Fs.dataDirFd >= 0) {
         if (close(Mod_Fs.dataDirFd) < 0) {
             reportErrno("EV3 FS: cannot close root data directory");
@@ -91,7 +67,13 @@ fserr_t posixFsLoadMeta(handle_data_t *pH) {
 
     // open meta block
 
-    fd = openat(Mod_Fs.metaDirFd, pH->name, O_RDONLY);
+    char *metaName = posixFsGetMetaName(pH->name);
+    if (!metaName)
+        return reportErrno("EV3 FS: cannot allocate memory");
+
+    fd = openat(Mod_Fs.dataDirFd, metaName, O_RDONLY);
+    free(metaName);
+    metaName = NULL;
     if (fd < 0) {
         if (errno != ENOENT)
             return reportErrno("EV3 FS: cannot open meta file");
@@ -132,7 +114,13 @@ fserr_t posixFsSaveMeta(handle_data_t *pH) {
 
     fserr_t result = SUCCESS;
 
-    int fd = openat(Mod_Fs.metaDirFd, pH->name, O_CREAT | O_TRUNC | O_WRONLY, 00644);
+    char *metaName = posixFsGetMetaName(pH->name);
+    if (!metaName)
+        return reportErrno("EV3 FS: cannot allocate memory");
+
+    int fd = openat(Mod_Fs.dataDirFd, metaName, O_CREAT | O_TRUNC | O_WRONLY, 00644);
+    free(metaName);
+    metaName = NULL;
     if (fd < 0)
         return reportErrno("EV3 FS: cannot open metadata file");
 
@@ -364,9 +352,15 @@ fserr_t posixFsRemove(handle_data_t *pH) {
 
     pH->isReal = false;
 
-    if (unlinkat(Mod_Fs.metaDirFd, pH->name, 0) < 0) {
-        if (errno != ENOENT)
-            reportErrno("EV3 FS: cannot delete metadata file");
+    char *metaName = posixFsGetMetaName(pH->name);
+    if (metaName) {
+        int result = unlinkat(Mod_Fs.dataDirFd, metaName, 0);
+        if (result < 0) {
+            if (errno != ENOENT)
+                reportErrno("EV3 FS: cannot delete metadata file");
+        }
+        free(metaName);
+        metaName = NULL;
     }
 
     if (unlinkat(Mod_Fs.dataDirFd, pH->name, 0) < 0)
@@ -379,20 +373,35 @@ fserr_t posixFsMove(handle_data_t *pH, const char *name) {
     if (!pH->isReal)
         return ILLEGALHANDLE;
 
-    if (linkat(Mod_Fs.dataDirFd, pH->name, Mod_Fs.dataDirFd, name, 0) < 0)
-        return reportErrno("EV3 FS: cannot make hardlink to data file");
+    const char *fail = NULL;
 
-    if (linkat(Mod_Fs.metaDirFd, pH->name, Mod_Fs.metaDirFd, name, 0) < 0)
-        return reportErrno("EV3 FS: cannot make hardlink to metadata file");
+    char *oldMetaName = posixFsGetMetaName(pH->name);
+    char *newMetaName = posixFsGetMetaName(name);
 
-    if (unlinkat(Mod_Fs.dataDirFd, pH->name, 0) < 0)
-        reportErrno("EV3 FS: warning: cannot remove data file after moving");
-
-    if (unlinkat(Mod_Fs.metaDirFd, pH->name, 0) < 0) {
-        reportErrno("EV3 FS: warning: cannot remove meta file after moving");
+    if (!oldMetaName || !newMetaName) {
+        fail = "EV3 FS: cannot allocate memory";
+        goto end;
     }
 
+    if (linkat(Mod_Fs.dataDirFd, pH->name, Mod_Fs.dataDirFd, name, 0) < 0) {
+        fail = "EV3 FS: cannot make hardlink to data file";
+        goto end;
+    }
+
+    if (linkat(Mod_Fs.dataDirFd, oldMetaName, Mod_Fs.dataDirFd, newMetaName, 0) < 0) {
+        fail = "EV3 FS: cannot make hardlink to metadata file";
+        goto end;
+    }
+
+    unlinkat(Mod_Fs.dataDirFd, pH->name, 0);
+    unlinkat(Mod_Fs.dataDirFd, oldMetaName, 0);
     strncpy(pH->name, name, FS_NAME_MAX_CHARS);
+
+end:
+    free(oldMetaName);
+    free(newMetaName);
+    if (fail != NULL)
+        return reportErrno(fail);
     return SUCCESS;
 }
 
@@ -510,9 +519,8 @@ fserr_t reportErrno(const char *message) {
     return mapErrno(error);
 }
 
-bool posixFsGetDefaultDirs(char **pDataDir, char **pMetaDir) {
+bool posixFsGetDefaultDirs(char **pDataDir) {
     *pDataDir = NULL;
-    *pMetaDir = NULL;
 
     char *selfPath = realpath("/proc/self/exe", NULL);
     if (!selfPath) {
@@ -520,25 +528,19 @@ bool posixFsGetDefaultDirs(char **pDataDir, char **pMetaDir) {
         return false;
     }
 
-    char *parentPath = dirname(selfPath);
+    *pDataDir = dirname(selfPath);
 
-    if (asprintf(pDataDir, "%s/data", parentPath) < 0) {
-        reportErrno("EV3 FS: cannot get path to datadir");
-        *pDataDir = NULL;
-    }
-    if (asprintf(pMetaDir, "%s/meta", parentPath) < 0) {
-        reportErrno("EV3 FS: cannot get path to metadir");
-        *pMetaDir = NULL;
-    }
-
-    free(selfPath);
-    if (*pDataDir == NULL || *pMetaDir == NULL) {
+    if (*pDataDir == NULL) {
         free(*pDataDir);
-        free(*pMetaDir);
         *pDataDir = NULL;
-        *pMetaDir = NULL;
         return false;
     } else {
         return true;
     }
+}
+
+char *posixFsGetMetaName(const char *dataName) {
+    char *result = NULL;
+    int  count   = asprintf(&result, ".%s.meta", dataName);
+    return count < 0 ? NULL : result;
 }

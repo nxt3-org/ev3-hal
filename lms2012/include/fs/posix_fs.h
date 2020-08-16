@@ -32,6 +32,7 @@ extern fserr_t posixFsBrowseNext(DIR *stream, struct dirent **ppDirent);
 extern void    posixFsFinishBrowse(DIR **pStream);
 
 extern fserr_t posixFsGetFreeBytes(uint32_t *pBytes);
+extern char   *posixFsGetMetaName(const char *dataName);
 
-extern bool posixFsGetDefaultDirs(char **pDataDir, char **pMetaDir);
+extern bool posixFsGetDefaultDirs(char **pDataDir);
 #endif //POSIX_FS
