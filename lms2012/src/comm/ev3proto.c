@@ -457,12 +457,12 @@ bool Ev3Proto_LsFile(const char *entry, const char *fullPath, FILE *fp) {
     struct stat info;
     if (stat(fullPath, &info) < 0) return false;
 
-    fprintf(fp, "%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX"
-                "%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX"
-                " %08llX %s\n",
-            md5buf[0], md5buf[1], md5buf[2], md5buf[3], md5buf[4], md5buf[5], md5buf[6], md5buf[7],
-            md5buf[8], md5buf[9], md5buf[10], md5buf[11], md5buf[12], md5buf[13], md5buf[14], md5buf[15],
-            info.st_size, entry);
+
+    fprintf(fp, "%02hhX%02hhX%02hhX%02hhX", md5buf[0], md5buf[1], md5buf[2], md5buf[3]);
+    fprintf(fp, "%02hhX%02hhX%02hhX%02hhX", md5buf[4], md5buf[5], md5buf[6], md5buf[7]);
+    fprintf(fp, "%02hhX%02hhX%02hhX%02hhX", md5buf[8], md5buf[9], md5buf[10], md5buf[11]);
+    fprintf(fp, "%02hhX%02hhX%02hhX%02hhX", md5buf[12], md5buf[13], md5buf[14], md5buf[15]);
+    fprintf(fp, " %08X %s\n", (unsigned int) info.st_size, entry);
     return true;
 }
 
