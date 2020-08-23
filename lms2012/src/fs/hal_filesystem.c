@@ -347,6 +347,8 @@ errhnd_t Hal_Fs_LocateNext(handle_t handle, char *name, uint32_t *pLength) {
     while ((err = posixFsBrowseNext(pH->queryDir, &pEntry)) == SUCCESS) {
         if (pEntry->d_type != DT_REG)
             continue;
+        if (pEntry->d_name[0] == '\0' || pEntry->d_name[0] == '.')
+            continue; // refuse to work with hidden files (such as metadata files)
         if (SUCCESS == Hal_Fs_CheckQuery(pEntry->d_name, &pH->query)) {
             break;
         }
