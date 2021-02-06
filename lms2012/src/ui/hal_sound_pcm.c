@@ -1,15 +1,16 @@
+// SPDX-License-Identifier: MIT
+// PCM waveform sender //
 #include "ui/hal_sound.private.h"
 #include "common/kdevices.h"
-#include <stdio.h>
 #include <memory.h>
 
-int Hal_Sound_StartPcm(uint8_t *samples, uint32_t length, uint16_t samplerate, uint8_t volume) {
+int Hal_Sound_SendPcm(uint8_t *samples, uint32_t length, uint8_t volume) {
     if (Mod_Sound.refCount <= 0)
         return SOUND_RESULT_ERROR;
 
     // start & underrun
     if (DeviceSound.mmap->fifo_state == FIFO_EMPTY) {
-        if (!initPcm(samplerate, volume))
+        if (!initPcm(convertVolume(volume)))
             return SOUND_RESULT_ERROR;
     }
 
@@ -17,32 +18,27 @@ int Hal_Sound_StartPcm(uint8_t *samples, uint32_t length, uint16_t samplerate, u
     Mod_Sound.state = SOUND_STATE_PCM;
 
     if (length == 0)
-        return SOUND_RESULT_SENT;
+        return 0; // just initialize, do not send data
 
     return writePCM(samples, length);
 }
 
-bool initPcm(uint16_t samplerate, uint8_t volume) {
-    // nope, only 8000 Hz supported
-    if (samplerate != SAMPLERATE_DEFAULT) {
-        fprintf(stderr, "EV3 HAL: invalid sound sample rate: %d\n", samplerate);
-        return false;
-    }
+int Hal_Sound_SupportedSampleRate(void) {
+    return LMS2012_SAMPLERATE;
+}
 
-    if (volume > SOUNDVOLUMESTEPS)
-        volume = SOUNDVOLUMESTEPS;
-
+bool initPcm(uint8_t volume) {
     sound_req_play req = {
         .cmd = CMD_PLAY,
-        .volume = 2 * volume
+        .volume = volume
     };
 
     return writeCommand(&req, sizeof(req), true);
 }
 
 int writePCM(void *samples, uint32_t size) {
-    if (size > SOUNDBUFFERSIZE)
-        size = SOUNDBUFFERSIZE;
+    if (size > SOUND_BUFFER_SIZE)
+        size = SOUND_BUFFER_SIZE;
 
     sound_req_data req = {.cmd = CMD_DATA};
     memcpy(req.samples, samples, size);
@@ -50,5 +46,5 @@ int writePCM(void *samples, uint32_t size) {
     int written = Kdev_Pwrite(&DeviceSound, &req, size + 1, 0);
 
     return written < 0 ? SOUND_RESULT_ERROR :
-           (written == 0 ? SOUND_RESULT_BUSY : SOUND_RESULT_SENT);
+           (written == 0 ? SOUND_RESULT_BUSY : written);
 }

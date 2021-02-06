@@ -1,14 +1,16 @@
+// SPDX-License-Identifier: MIT
+// Single tone sender //
 #include "ui/hal_sound.private.h"
 #include "common/kdevices.h"
 
-bool Hal_Sound_StartTone(uint16_t freqHZ, uint16_t durMS, uint8_t volume) {
+bool Hal_Sound_SendTone(uint16_t freqHZ, uint16_t durMS, uint8_t volume) {
     if (Mod_Sound.refCount <= 0)
         return false;
 
     resetState();
     Mod_Sound.state = SOUND_STATE_TONE;
 
-    return writeTone(freqHZ, durMS, volume);
+    return writeTone(freqHZ, durMS, convertVolume(volume));
 }
 
 bool Hal_Sound_ToneFinished(void) {
@@ -23,20 +25,20 @@ bool Hal_Sound_ToneFinished(void) {
 }
 
 bool writeTone(uint16_t freqHZ, uint16_t durMS, uint8_t volume) {
-    if (volume > SOUNDVOLUMESTEPS)
-        volume = SOUNDVOLUMESTEPS;
+    if (volume > LMS2012_MAX_VOLUME)
+        volume = LMS2012_MAX_VOLUME;
 
-    if (durMS < DURATION_MIN)
-        durMS = DURATION_MIN;
+    if (durMS < TONE_DURATION_MIN)
+        durMS = TONE_DURATION_MIN;
 
-    if (freqHZ > FREQUENCY_MAX)
-        freqHZ = FREQUENCY_MAX;
-    else if (freqHZ < FREQUENCY_MIN)
-        freqHZ = FREQUENCY_MIN;
+    if (freqHZ > TONE_FREQUENCY_MAX)
+        freqHZ = TONE_FREQUENCY_MAX;
+    else if (freqHZ < TONE_FREQUENCY_MIN)
+        freqHZ = TONE_FREQUENCY_MIN;
 
     sound_req_tone req = {
         .cmd = CMD_TONE,
-        .volume = 2 * volume,
+        .volume = volume,
         .duration = durMS,
         .frequency = freqHZ
     };
