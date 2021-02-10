@@ -13,12 +13,14 @@ bool Hal_Sound_SendTone(uint16_t freqHZ, uint16_t durMS, uint8_t volume) {
     return writeTone(freqHZ, durMS, convertVolume(volume));
 }
 
-bool Hal_Sound_ToneFinished(void) {
+bool Hal_Sound_IsFinished(void) {
     if (Mod_Sound.refCount <= 0)
         return true;
 
-    if (Mod_Sound.state == SOUND_STATE_TONE) {
+    if (Mod_Sound.state == SOUND_STATE_TONE || Mod_Sound.state == SOUND_STATE_PCM) {
         return DeviceSound.mmap->fifo_state == FIFO_EMPTY;
+    } else if (Mod_Sound.state == SOUND_STATE_MELODY) {
+        return !hasAnyMelodyData() && DeviceSound.mmap->fifo_state == FIFO_EMPTY;
     } else {
         return true;
     }

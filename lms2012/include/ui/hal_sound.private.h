@@ -133,4 +133,10 @@ extern uint8_t convertVolume(uint8_t percent);
  */
 extern void pushMelody(void);
 
+/**
+ * Check whether there are melody data in the userspace FIFO.
+ * @return True if yes, false otherwise.
+ */
+extern bool hasAnyMelodyData(void);
+
 #endif //HAL_SOUND_PRIVATE

@@ -73,3 +73,11 @@ void pushMelody(void) {
         currentBuffer->remaining -= 1;
     }
 }
+
+bool hasAnyMelodyData(void) {
+    for (int i = 0; i < MELODY_BUFFERS; i++) {
+        if (Mod_Sound.melody.buffers[i].remaining > 0)
+            return true;
+    }
+    return false;
+}

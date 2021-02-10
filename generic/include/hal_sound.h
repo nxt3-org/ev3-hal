@@ -88,6 +88,6 @@ extern int Hal_Sound_SendMelody(uint8_t *notes, uint32_t length, uint8_t volume)
  * Test whether tone playback was finished.
  * @return True if the tone is over, false otherwise.
  */
-extern bool Hal_Sound_ToneFinished(void);
+extern bool Hal_Sound_IsFinished(void);
 
 #endif //HAL_SOUND
